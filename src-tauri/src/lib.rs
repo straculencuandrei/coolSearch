@@ -64,6 +64,19 @@ fn search_files(query: &str) -> Vec<mft::FileRecord> {
     mft::search(query, 1000)
 }
 
+#[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    if !url.starts_with("http") {
+        return Err("Invalid URL".to_string());
+    }
+    use std::process::Command;
+    Command::new("cmd")
+        .args(&["/C", "start", "", &url])
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -76,7 +89,8 @@ pub fn run() {
             get_index_status, 
             search_files, 
             get_file_details, 
-            open_in_explorer
+            open_in_explorer,
+            open_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
