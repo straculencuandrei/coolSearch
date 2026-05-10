@@ -3,7 +3,6 @@ import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
 import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check } from "lucide-react";
-import AutoSizer from "react-virtualized-auto-sizer";
 import "./App.css";
 
 interface FileRecord {
@@ -23,6 +22,13 @@ function App() {
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null);
   const [details, setDetails] = useState<{ size: number, created: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+
+  useEffect(() => {
+    const handleResize = () => setWindowHeight(window.innerHeight);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     // Poll index status
@@ -296,25 +302,21 @@ function App() {
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
               className="w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-6 shadow-2xl flex flex-col"
+              style={{ maxHeight: 'calc(100vh - 200px)' }}
             >
               {results.length > 0 ? (
-                <div className="flex-1 w-full h-full">
-                  <AutoSizer>
-                    {({ height, width }: any) => (
-                      <List
-                        className="custom-scrollbar"
-                        height={height}
-                        width={width}
-                        rowCount={results.length}
-                        rowHeight={40}
-                      >
-                        {Row}
-                      </List>
-                    )}
-                  </AutoSizer>
+                <div className="flex-1 overflow-hidden" style={{ position: 'relative' }}>
+                  <List
+                    className="custom-scrollbar w-full"
+                    style={{ height: windowHeight - 200 }}
+                    rowCount={results.length}
+                    rowHeight={38}
+                    rowComponent={Row}
+                    rowProps={{}}
+                  />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500 py-20">
+                <div className="flex flex-col items-center justify-center h-48 text-gray-500">
                   <Terminal size={32} className="mb-2 opacity-50" />
                   <p>No results found for "{query}"</p>
                 </div>
