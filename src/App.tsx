@@ -54,26 +54,41 @@ function App() {
   }, []);
 
   const fetchReleaseNotes = async () => {
-    try {
-      const res = await fetch('https://api.github.com/repos/straculencuandrei/coolSearch/releases/latest');
-      const data = await res.json();
-      const rawNotes = data.body || "No description available.";
-      
-      // Basic markdown cleaning
-      const cleanNotes = rawNotes
-        .replace(/(\*\*|__)(.*?)\1/g, '$2')
-        .replace(/(\*|_)(.*?)\1/g, '$2')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-        .replace(/^#+\s+/gm, '')
-        .replace(/^\s*[-*+]\s+/gm, '• ')
-        .trim();
+    // Hardcoded release notes for offline access
+    const releaseNotesText = `🎉 coolSearch v0.1.9 - Major UI Overhaul & Theming
 
-      setReleaseNotes(cleanNotes);
-      setShowNotes(true);
-    } catch (e) {
-      console.error(e);
-    }
+🎨 UI/UX Enhancements
+• Multi-Theme Support: Added 5 beautiful themes (Matte Dark, Light, Neon Blue, Red, Green) with full CSS variable theming system
+• Settings Panel: New settings modal accessible via wrench icon for theme and font selection
+• Improved Animations: Smoother transitions and better positioning for the search interface
+• Enhanced Styling: Neon glow effects for neon themes, improved color consistency across all themes
+
+🖼️ Icon Updates
+• Completely refreshed all app icons (32x32, 128x128, Store logos, etc.) with modern, high-quality designs
+• Significantly larger file sizes indicating premium graphics quality
+
+🔧 Backend Improvements
+• Cache Reliability: Fixed potential crash in cache loading by using temp directory fallback
+• Code Cleanup: Minor formatting and import organization improvements in Rust code
+• Security Update: Updated public key for app auto-updates
+
+📦 Distribution
+• Standalone executable (portable)
+• MSI installer for Windows
+• NSIS setup installer
+
+🐛 Bug Fixes
+• Improved error handling for cache operations
+
+Installation Options:
+• Download the portable coolSearch_0.1.9.exe for instant use
+• Use the MSI installer for system integration
+• NSIS setup for guided installation
+
+Enjoy the new themes and enhanced experience! 🚀`;
+
+    setReleaseNotes(releaseNotesText);
+    setShowNotes(true);
   };
   useEffect(() => {
     const handleResize = () => setWindowHeight(window.innerHeight);
