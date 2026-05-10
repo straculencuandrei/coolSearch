@@ -3,6 +3,7 @@ import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
 import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check } from "lucide-react";
+import { open } from "@tauri-apps/plugin-opener";
 import "./App.css";
 
 interface FileRecord {
@@ -356,15 +357,15 @@ function App() {
                   <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Version</span>
                   <span className="text-gray-200 font-medium text-base">0.1.8</span>
                 </div>
-                <a 
-                  href="https://github.com/straculencuandrei/coolSearch" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-neon-blue hover:text-white transition-colors mt-2 font-medium"
+                <button 
+                  onClick={async () => {
+                    await open("https://github.com/straculencuandrei/coolSearch");
+                  }}
+                  className="flex items-center gap-2 text-neon-blue hover:text-white transition-colors mt-2 font-medium bg-transparent border-none p-0"
                 >
                   <ExternalLink size={18} />
                   GitHub Repository
-                </a>
+                </button>
               </div>
             </motion.div>
           </motion.div>
