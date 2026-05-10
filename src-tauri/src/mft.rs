@@ -112,18 +112,21 @@ pub fn start_indexing() {
                 let next_id = unsafe { *(buffer.as_ptr() as *const u64) };
 
                 let mut offset = 8;
-                while offset < bytes_returned {
+                while offset + 8 <= bytes_returned {
                     let record_ptr = unsafe { buffer.as_ptr().offset(offset as isize) };
 
                     let record_len = unsafe { *(record_ptr as *const u32) };
-                    if record_len == 0 {
+                    if record_len == 0 || offset + record_len > bytes_returned {
                         break;
                     }
 
                     let major_version = unsafe { *(record_ptr.offset(4) as *const u16) };
 
                     if major_version == 2 {
+                        if record_len < size_of::<USN_RECORD_V2>() as u32 { break; }
                         let record = unsafe { &*(record_ptr as *const USN_RECORD_V2) };
+                        if (record.FileNameOffset as u32 + record.FileNameLength as u32) > record_len { break; }
+
                         let filename_ptr = unsafe {
                             record_ptr.offset(record.FileNameOffset as isize) as *const u16
                         };
@@ -146,7 +149,10 @@ pub fn start_indexing() {
                             },
                         );
                     } else if major_version == 3 {
+                        if record_len < size_of::<USN_RECORD_V3>() as u32 { break; }
                         let record = unsafe { &*(record_ptr as *const USN_RECORD_V3) };
+                        if (record.FileNameOffset as u32 + record.FileNameLength as u32) > record_len { break; }
+
                         let filename_ptr = unsafe {
                             record_ptr.offset(record.FileNameOffset as isize) as *const u16
                         };

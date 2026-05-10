@@ -16,13 +16,25 @@ pub struct FileDetails {
     pub created: String,
 }
 
+fn validate_path(path: &str) -> Result<std::path::PathBuf, String> {
+    let p = std::path::PathBuf::from(path);
+    if !p.is_absolute() {
+        return Err("Invalid path: must be absolute".to_string());
+    }
+    if path.contains("..") {
+        return Err("Invalid path: traversal detected".to_string());
+    }
+    Ok(p)
+}
+
 #[tauri::command]
 fn get_file_details(path: String) -> Result<FileDetails, String> {
     use std::fs;
     use std::time::SystemTime;
     use chrono::{DateTime, Local};
 
-    let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+    let safe_path = validate_path(&path)?;
+    let metadata = fs::metadata(&safe_path).map_err(|e| e.to_string())?;
     let created: SystemTime = metadata.created().unwrap_or(SystemTime::now());
     let datetime: DateTime<Local> = created.into();
     
@@ -35,9 +47,10 @@ fn get_file_details(path: String) -> Result<FileDetails, String> {
 #[tauri::command]
 fn open_in_explorer(path: String) -> Result<(), String> {
     use std::process::Command;
+    let safe_path = validate_path(&path)?;
     Command::new("explorer")
         .arg("/select,")
-        .arg(path)
+        .arg(safe_path)
         .spawn()
         .map_err(|e| e.to_string())?;
     Ok(())
