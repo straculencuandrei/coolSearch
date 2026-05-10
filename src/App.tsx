@@ -251,7 +251,7 @@ Enjoy the new themes and enhanced experience! 🚀`;
           className="text-[10px] uppercase tracking-[0.1em] text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 mr-6"
         >
           <Sparkles size={12} />
-          What's New in 0.1.9?
+          What's New in 0.1.91?
         </button>
       </div>
 
@@ -651,7 +651,7 @@ Enjoy the new themes and enhanced experience! 🚀`;
                 </div>
                 <div>
                   <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Version</span>
-                  <span className="text-gray-200 font-medium text-base">0.1.9</span>
+                  <span className="text-gray-200 font-medium text-base">0.1.91</span>
                 </div>
                 <button
                   onClick={() => {
