@@ -3,7 +3,6 @@ import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
 import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench, Sparkles, Download, X } from "lucide-react";
-import { check } from "@tauri-apps/plugin-updater";
 import "./App.css";
 
 interface FileRecord {
@@ -32,9 +31,14 @@ function App() {
   useEffect(() => {
     const checkForUpdates = async () => {
       try {
-        const update = await check();
-        if (update) {
-          setUpdateAvailable(update);
+        const res = await fetch('https://api.github.com/repos/straculencuandrei/coolSearch/releases/latest');
+        const data = await res.json();
+        if (data.tag_name) {
+          const latestVersion = data.tag_name.replace('v', '');
+          const currentVersion = "0.1.8";
+          if (latestVersion !== currentVersion) {
+            setUpdateAvailable({ version: latestVersion, url: data.html_url });
+          }
         }
       } catch (e) {
         console.error("Update check failed", e);
@@ -401,8 +405,8 @@ function App() {
             className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30"
           >
             <button 
-              onClick={async () => {
-                await updateAvailable.downloadAndInstall();
+              onClick={() => {
+                invoke("open_url", { url: updateAvailable.url });
               }}
               className="flex items-center gap-2 bg-neon-blue text-dark-bg font-bold px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(0,243,255,0.3)] hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
             >

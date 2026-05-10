@@ -85,7 +85,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        // .plugin(tauri_plugin_updater::Builder::new().build()) // Requires pubkey in tauri.conf.json
         .invoke_handler(tauri::generate_handler![
             get_index_status, 
             search_files, 
