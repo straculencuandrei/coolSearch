@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench } from "lucide-react";
+import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench, Sparkles, Download, X } from "lucide-react";
+import { check } from "@tauri-apps/plugin-updater";
 import "./App.css";
 
 interface FileRecord {
@@ -24,8 +25,34 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const [currentFont, setCurrentFont] = useState<'sfpro' | 'jetbrains'>('sfpro');
+  const [updateAvailable, setUpdateAvailable] = useState<any>(null);
+  const [releaseNotes, setReleaseNotes] = useState<string>("");
+  const [showNotes, setShowNotes] = useState(false);
 
   useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const update = await check();
+        if (update) {
+          setUpdateAvailable(update);
+        }
+      } catch (e) {
+        console.error("Update check failed", e);
+      }
+    };
+    checkForUpdates();
+  }, []);
+
+  const fetchReleaseNotes = async () => {
+    try {
+      const res = await fetch('https://api.github.com/repos/straculencuandrei/coolSearch/releases/latest');
+      const data = await res.json();
+      setReleaseNotes(data.body || "No description available.");
+      setShowNotes(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
     const handleResize = () => setWindowHeight(window.innerHeight);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -151,7 +178,7 @@ function App() {
       <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-neon-blue/10 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Header & Status */}
-      <div className="flex items-center justify-end p-6 px-10 z-10">
+      <div className="flex flex-col items-end p-6 px-10 z-10 gap-2">
         <div className="text-xs font-mono text-gray-400 bg-dark-surface px-4 py-1.5 rounded-full border border-gray-800 flex items-center gap-2 -translate-x-4">
           {status.includes("Indexing") ? (
             <span className="relative flex h-2 w-2">
@@ -163,6 +190,13 @@ function App() {
           )}
           {status}
         </div>
+        <button 
+          onClick={fetchReleaseNotes}
+          className="text-[10px] uppercase tracking-[0.1em] text-gray-500 hover:text-neon-blue transition-colors flex items-center gap-1.5 mr-6"
+        >
+          <Sparkles size={12} />
+          What's New in 0.1.8?
+        </button>
       </div>
 
       {/* Search Container */}
@@ -356,6 +390,62 @@ function App() {
       >
         <Info size={18} />
       </button>
+
+      {/* Update Button */}
+      <AnimatePresence>
+        {updateAvailable && (
+          <motion.div 
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30"
+          >
+            <button 
+              onClick={async () => {
+                await updateAvailable.downloadAndInstall();
+              }}
+              className="flex items-center gap-2 bg-neon-blue text-dark-bg font-bold px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(0,243,255,0.3)] hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
+            >
+              <Download size={18} />
+              Update to {updateAvailable.version}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Release Notes Modal */}
+      <AnimatePresence>
+        {showNotes && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] flex items-center justify-center p-4"
+            onClick={() => setShowNotes(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-dark-surface border border-gray-800 p-8 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="text-neon-blue" size={24} />
+                  <h2 className="text-xl font-bold tracking-tight">Latest Release Changes</h2>
+                </div>
+                <button onClick={() => setShowNotes(false)} className="text-gray-500 hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-sans">
+                {releaseNotes}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Info Modal */}
       <AnimatePresence>
