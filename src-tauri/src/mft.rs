@@ -62,7 +62,7 @@ pub fn get_cache_path(app_handle: &tauri::AppHandle) -> PathBuf {
     app_handle
         .path()
         .app_data_dir()
-        .unwrap_or_default()
+        .unwrap_or_else(|_| std::env::temp_dir())
         .join("index_cache.bin")
 }
 

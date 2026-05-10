@@ -29,15 +29,15 @@ fn validate_path(path: &str) -> Result<std::path::PathBuf, String> {
 
 #[tauri::command]
 fn get_file_details(path: String) -> Result<FileDetails, String> {
+    use chrono::{DateTime, Local};
     use std::fs;
     use std::time::SystemTime;
-    use chrono::{DateTime, Local};
 
     let safe_path = validate_path(&path)?;
     let metadata = fs::metadata(&safe_path).map_err(|e| e.to_string())?;
     let created: SystemTime = metadata.created().unwrap_or(SystemTime::now());
     let datetime: DateTime<Local> = created.into();
-    
+
     Ok(FileDetails {
         size: metadata.len(),
         created: datetime.format("%Y-%m-%d %H:%M:%S").to_string(),
@@ -88,7 +88,7 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             let app_handle = app.handle().clone();
-            
+
             // Try to load from cache first
             if !mft::load_cache(&app_handle) {
                 // If no cache, start indexing
@@ -100,9 +100,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build()) // Requires pubkey in tauri.conf.json
         .invoke_handler(tauri::generate_handler![
-            get_index_status, 
-            search_files, 
-            get_file_details, 
+            get_index_status,
+            search_files,
+            get_file_details,
             open_in_explorer,
             open_url,
             refresh_index

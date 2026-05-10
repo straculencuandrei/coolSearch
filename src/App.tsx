@@ -20,11 +20,13 @@ function App() {
   const [status, setStatus] = useState("Initializing...");
   const [isFocused, setIsFocused] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null);
   const [details, setDetails] = useState<{ size: number, created: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const [currentFont, setCurrentFont] = useState<'sfpro' | 'jetbrains'>('sfpro');
+  const [currentTheme, setCurrentTheme] = useState<'matte-dark' | 'light' | 'neon-blue' | 'neon-red' | 'neon-green'>('matte-dark');
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const [releaseNotes, setReleaseNotes] = useState<string>("");
   const [showNotes, setShowNotes] = useState(false);
@@ -200,7 +202,7 @@ function App() {
         onClick={() => handleFileClick(file)}
         className="flex items-center px-4 border-b border-gray-800/50 hover:bg-dark-surface/80 transition-colors cursor-pointer group"
       >
-        <div className={`mr-3 transition-transform group-hover:scale-110 ${getIconColor()}`}>
+        <div className={`mr-3 transition-transform group-hover:scale-110 ${getIconColor()} ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
           {getIcon()}
         </div>
         <div className="flex-1 truncate flex flex-col justify-center py-1.5">
@@ -212,17 +214,17 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-hidden ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
+    <div className={`min-h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-hidden theme-${currentTheme} ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
       {/* Background with subtle matte finish */}
       <div className="absolute inset-0 bg-dark-bg pointer-events-none" />
 
       {/* Header & Status */}
       <div className="flex flex-col items-end p-6 px-10 z-10 gap-2">
-        <div className="text-xs font-mono text-gray-400 bg-dark-surface px-4 py-1.5 rounded-full border border-gray-800 flex items-center gap-2 -translate-x-4">
+        <div className={`text-xs font-mono text-gray-400 bg-dark-surface px-4 py-1.5 rounded-full border border-gray-800 flex items-center gap-2 -translate-x-4 ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}>
           {status.includes("Indexing") ? (
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-400"></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${currentTheme.startsWith('neon') ? 'bg-[var(--theme-accent)]' : 'bg-gray-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${currentTheme.startsWith('neon') ? 'bg-[var(--theme-accent)]' : 'bg-gray-400'}`}></span>
             </span>
           ) : (
             <span className="h-2 w-2 rounded-full bg-green-500"></span>
@@ -242,10 +244,10 @@ function App() {
       <div className="flex flex-col items-center justify-start flex-1 w-full max-w-2xl mx-auto mt-4 px-4 z-10">
         {!selectedFile && (
           <motion.div
-            initial={{ opacity: 0, y: 160 }}
+            initial={{ opacity: 0, y: 60 }}
             animate={{
               opacity: query || isFocused ? 0 : 1,
-              y: query || isFocused ? 130 : 150,
+              y: query || isFocused ? 20 : 40,
               scale: query || isFocused ? 0.95 : 1.2,
               filter: query || isFocused ? 'blur(10px)' : 'blur(0px)'
             }}
@@ -253,10 +255,10 @@ function App() {
             onMouseMove={handleTitleMouseMove}
             className="flex items-center gap-3 mb-8 relative"
           >
-            <Wrench size={24} className="text-gray-400 absolute -left-10" />
+            <Wrench size={24} className={`text-gray-400 absolute -left-10 ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`} />
             <h1 
               data-text="coolSearch"
-              className="chrome-title font-bold text-2xl tracking-[0.1em] uppercase select-none cursor-default"
+              className={`chrome-title font-bold text-2xl tracking-[0.1em] uppercase select-none cursor-default ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}
               style={{ 
                 '--mouse-x': `${mousePos.x}%`, 
                 '--mouse-y': `${mousePos.y}%` 
@@ -271,7 +273,7 @@ function App() {
             <motion.div
               key="search-bar"
               animate={{
-                y: query || isFocused ? 0 : 150,
+                y: query || isFocused ? 0 : 40,
                 scale: query || isFocused ? 1 : 1.05
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -280,6 +282,7 @@ function App() {
               <div className={`
                 relative group flex items-center bg-dark-surface/80 backdrop-blur-md rounded-xl matte-border
                 ${isFocused ? 'matte-border-focus' : 'border-gray-800'} 
+                ${currentTheme.startsWith('neon') ? 'neon-border' : ''}
                 transition-all duration-300 overflow-hidden
               `}>
                 <div className="pl-3 text-gray-400 group-hover:text-white transition-colors">
@@ -316,7 +319,7 @@ function App() {
             >
               <button
                 onClick={() => setSelectedFile(null)}
-                className="flex items-center gap-2 text-gray-400 hover:text-white transition-all bg-dark-surface/50 hover:bg-dark-surface px-5 py-2.5 rounded-xl border border-gray-800 hover:border-white/20 group shadow-lg"
+                className={`flex items-center gap-2 text-gray-400 hover:text-white transition-all bg-dark-surface/50 hover:bg-dark-surface px-5 py-2.5 rounded-xl border border-gray-800 hover:border-white/20 group shadow-lg ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
               >
                 <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
                 <span className="text-sm font-medium">Back to results</span>
@@ -333,14 +336,14 @@ function App() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row min-h-0 flex-1 mb-6 overflow-hidden"
+              className={`w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row min-h-0 flex-1 mb-6 overflow-hidden ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
             >
               <div className="flex-[0.8] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-800/50 pb-6 md:pb-0 md:pr-8">
                 <div className={`mb-6 p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 ${selectedFile.is_dir ? "text-yellow-400" :
                   ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
                     ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500 p-0 overflow-hidden" :
                       "text-gray-400"
-                  }`}>
+                  } ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}>
                   {selectedFile.is_dir ? <Folder size={64} /> :
                     ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? <Music size={64} /> :
                       ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? (
@@ -404,14 +407,14 @@ function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-6 shadow-2xl flex flex-col"
-              style={{ maxHeight: 'calc(100vh - 200px)' }}
+              className={`w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-6 shadow-2xl flex flex-col ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              style={{ maxHeight: 'calc(100vh - 120px)' }}
             >
               {results.length > 0 ? (
                 <div className="flex-1 overflow-hidden" style={{ position: 'relative' }}>
                   <List
                     className="custom-scrollbar w-full"
-                    style={{ height: windowHeight - 200 }}
+                    style={{ height: windowHeight - 120 }}
                     rowCount={results.length}
                     rowHeight={38}
                     rowComponent={Row}
@@ -429,13 +432,21 @@ function App() {
         </AnimatePresence>
       </div>
 
-      {/* Info Button */}
-      <button
-        onClick={() => setShowInfo(true)}
-        className="absolute bottom-4 right-4 p-2 text-gray-500 hover:text-white transition-colors z-20"
-      >
-        <Info size={18} />
-      </button>
+      {/* Footer Controls */}
+      <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-20">
+        <button
+          onClick={() => setShowSettings(true)}
+          className="p-2 text-gray-500 hover:text-white transition-colors"
+        >
+          <Wrench size={18} />
+        </button>
+        <button
+          onClick={() => setShowInfo(true)}
+          className="p-2 text-gray-500 hover:text-white transition-colors"
+        >
+          <Info size={18} />
+        </button>
+      </div>
 
       {/* Update Button */}
       <AnimatePresence>
@@ -450,7 +461,7 @@ function App() {
               onClick={async () => {
                 await updateAvailable.downloadAndInstall();
               }}
-              className="flex items-center gap-2 bg-gray-200 text-dark-bg font-bold px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
+              className={`flex items-center gap-2 bg-gray-200 text-dark-bg font-bold px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
             >
               <Download size={18} />
               Update to {updateAvailable.version}
@@ -473,7 +484,7 @@ function App() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-dark-surface border border-gray-800 p-8 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+              className={`bg-dark-surface border border-gray-800 p-8 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -487,6 +498,101 @@ function App() {
               </div>
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-sans">
                 {releaseNotes}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowSettings(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, x: -20 }}
+              animate={{ scale: 1, opacity: 1, x: 0 }}
+              exit={{ scale: 0.9, opacity: 0, x: -20 }}
+              className={`bg-dark-surface border border-gray-800 p-8 rounded-3xl shadow-2xl max-w-md w-full flex flex-col gap-6 ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Wrench className="text-gray-400" size={20} />
+                  <h2 className="text-lg font-bold">App Settings</h2>
+                </div>
+                <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <span className="text-gray-500 block mb-3 text-[11px] uppercase tracking-widest font-bold">Theme</span>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      { id: 'matte-dark', color: '#242424', label: 'Dark' },
+                      { id: 'light', color: '#f5f5f7', label: 'Light' },
+                      { id: 'neon-blue', color: '#00f2ff', label: 'Blue' },
+                      { id: 'neon-red', color: '#ff003c', label: 'Red' },
+                      { id: 'neon-green', color: '#39ff14', label: 'Green' },
+                    ].map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => setCurrentTheme(t.id as any)}
+                        className={`group flex flex-col items-center gap-1.5 transition-all ${currentTheme === t.id ? 'scale-110' : 'opacity-60 hover:opacity-100'}`}
+                      >
+                        <div 
+                          className={`w-10 h-10 rounded-full border-2 ${currentTheme === t.id ? 'border-white shadow-lg' : 'border-transparent'}`}
+                          style={{ backgroundColor: t.color }}
+                        />
+                        <span className="text-[10px] text-gray-400">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-gray-500 block mb-3 text-[11px] uppercase tracking-widest font-bold">Typography</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentFont('sfpro')}
+                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border transition-all ${currentFont === 'sfpro' ? 'bg-white text-black border-white' : 'bg-dark-bg border-gray-800 text-gray-400 hover:border-gray-600'}`}
+                    >
+                      <Type size={16} />
+                      <span className="text-xs font-medium">SF Pro</span>
+                    </button>
+                    <button
+                      onClick={() => setCurrentFont('jetbrains')}
+                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border transition-all ${currentFont === 'jetbrains' ? 'bg-white text-black border-white' : 'bg-dark-bg border-gray-800 text-gray-400 hover:border-gray-600'}`}
+                    >
+                      <Code size={16} />
+                      <span className="text-xs font-medium">JetBrains</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-800/50">
+                  <span className="text-gray-500 block mb-3 text-[11px] uppercase tracking-widest font-bold">Maintenance</span>
+                  <button
+                    onClick={() => {
+                      invoke("refresh_index");
+                      setShowSettings(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all group"
+                  >
+                    <Terminal size={18} />
+                    <div className="text-left">
+                      <div className="text-xs font-bold uppercase">Force Re-index</div>
+                      <div className="text-[10px] opacity-70">Deep scan MFT records immediately</div>
+                    </div>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -507,7 +613,7 @@ function App() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-dark-surface border border-gray-800 p-10 rounded-3xl shadow-2xl max-w-xl w-full flex items-center"
+              className={`bg-dark-surface border border-gray-800 p-10 rounded-3xl shadow-2xl max-w-xl w-full flex items-center ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex-1 text-center border-r border-gray-800/50 pr-10">
@@ -541,27 +647,6 @@ function App() {
                   <ExternalLink size={18} />
                   GitHub Repository
                 </button>
-                <div className="pt-2 border-t border-gray-800/50 mt-2">
-                  <span className="text-gray-500 block mb-2 text-[11px] uppercase tracking-widest">Index Control</span>
-                  <button
-                    onClick={() => {
-                      invoke("refresh_index");
-                      setShowInfo(false);
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-2 bg-dark-bg border border-gray-800 rounded-xl text-xs hover:border-white/30 transition-all group mb-2"
-                  >
-                    <Terminal size={16} />
-                    <span>Force Re-index</span>
-                  </button>
-                  <span className="text-gray-500 block mb-2 text-[11px] uppercase tracking-widest">Appearance</span>
-                  <button
-                    onClick={() => setCurrentFont(prev => prev === 'sfpro' ? 'jetbrains' : 'sfpro')}
-                    className="flex items-center gap-2 w-full px-3 py-2 bg-dark-bg border border-gray-800 rounded-xl text-xs hover:border-white/30 transition-all group"
-                  >
-                    {currentFont === 'sfpro' ? <Type size={16} /> : <Code size={16} />}
-                    <span>Switch to {currentFont === 'sfpro' ? 'JetBrains Mono' : 'SF Pro Display'}</span>
-                  </button>
-                </div>
               </div>
             </motion.div>
           </motion.div>
