@@ -75,8 +75,26 @@ function App() {
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
     };
+    const handleKeydown = (e: KeyboardEvent) => {
+      // Disable F12
+      if (e.key === "F12") {
+        e.preventDefault();
+      }
+      // Disable Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+      if (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C" || e.key === "i" || e.key === "j" || e.key === "c")) {
+        e.preventDefault();
+      }
+      // Disable Ctrl+U (View Source)
+      if (e.ctrlKey && (e.key === "U" || e.key === "u")) {
+        e.preventDefault();
+      }
+    };
     document.addEventListener("contextmenu", handleContextMenu);
-    return () => document.removeEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("keydown", handleKeydown);
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("keydown", handleKeydown);
+    };
   }, []);
 
   useEffect(() => {
