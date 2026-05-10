@@ -4,21 +4,34 @@
   --color-neon-blue: #00f3ff;
   --color-dark-bg: #0f0f13;
   --color-dark-surface: #1a1a24;
-  --font-sans: 'Outfit', sans-serif;
+  --font-sans: 'SF Pro Display', sans-serif;
 }
 
 @font-face {
-  font-family: 'Outfit';
-  src: url('./assets/outfit-variable.woff2') format('woff2');
-  font-weight: 100 900;
-  font-display: swap;
+  font-family: 'SF Pro Display';
+  src: url('./assets/custom_fonts/SFPRODISPLAYREGULAR.OTF') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./assets/custom_fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./assets/custom_fonts/SFPRODISPLAYBOLD.OTF') format('opentype');
+  font-weight: 700;
   font-style: normal;
 }
 
 @layer base {
   body {
     @apply bg-dark-bg text-gray-100 overflow-hidden;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'SF Pro Display', sans-serif;
     margin: 0;
     padding: 0;
   }
