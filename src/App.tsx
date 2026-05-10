@@ -354,7 +354,7 @@ function App() {
                 </div>
                 <div>
                   <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Version</span>
-                  <span className="text-gray-200 font-medium text-base">0.1.0</span>
+                  <span className="text-gray-200 font-medium text-base">0.1.8</span>
                 </div>
                 <a 
                   href="https://github.com/straculencuandrei/coolSearch" 
