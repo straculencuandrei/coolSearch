@@ -151,11 +151,7 @@ function App() {
       <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-neon-blue/10 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Header & Status */}
-      <div className="flex items-center justify-between p-6 px-10 z-10">
-        <div className="flex items-center gap-3 text-neon-blue font-bold text-sm tracking-wider translate-x-4">
-          <HardDrive size={18} />
-          <span>coolSearch</span>
-        </div>
+      <div className="flex items-center justify-end p-6 px-10 z-10">
         <div className="text-xs font-mono text-gray-400 bg-dark-surface px-4 py-1.5 rounded-full border border-gray-800 flex items-center gap-2 -translate-x-4">
           {status.includes("Indexing") ? (
             <span className="relative flex h-2 w-2">
@@ -171,6 +167,19 @@ function App() {
 
       {/* Search Container */}
       <div className="flex flex-col items-center justify-start flex-1 w-full max-w-2xl mx-auto mt-4 px-4 z-10">
+        {!selectedFile && (
+          <motion.h1 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ 
+              opacity: 1, 
+              y: query || isFocused ? 0 : 150,
+              scale: query || isFocused ? 1 : 1.2
+            }}
+            className="text-neon-blue font-bold text-2xl tracking-[0.2em] mb-8 uppercase"
+          >
+            coolSearch
+          </motion.h1>
+        )}
         <AnimatePresence mode="wait">
           {!selectedFile ? (
             <motion.div
