@@ -169,13 +169,15 @@ function App() {
       <div className="flex flex-col items-center justify-start flex-1 w-full max-w-2xl mx-auto mt-4 px-4 z-10">
         {!selectedFile && (
           <motion.h1 
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 160 }}
             animate={{ 
-              opacity: 1, 
-              y: query || isFocused ? 0 : 150,
-              scale: query || isFocused ? 1 : 1.2
+              opacity: query || isFocused ? 0 : 1, 
+              y: query || isFocused ? 130 : 150,
+              scale: query || isFocused ? 0.95 : 1.2,
+              filter: query || isFocused ? 'blur(10px)' : 'blur(0px)'
             }}
-            className="text-neon-blue font-bold text-2xl tracking-[0.2em] mb-8 uppercase"
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="text-neon-blue font-bold text-2xl tracking-[0.2em] mb-8 uppercase pointer-events-none"
           >
             coolSearch
           </motion.h1>
