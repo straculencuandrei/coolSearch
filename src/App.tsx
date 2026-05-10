@@ -32,6 +32,14 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    document.addEventListener("contextmenu", handleContextMenu);
+    return () => document.removeEventListener("contextmenu", handleContextMenu);
+  }, []);
+
+  useEffect(() => {
     // Poll index status
     const interval = setInterval(async () => {
       const currentStatus = await invoke<string>("get_index_status");
