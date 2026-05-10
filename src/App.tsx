@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, Github } from "lucide-react";
+import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink } from "lucide-react";
 import "./App.css";
 
 interface FileRecord {
@@ -207,7 +207,7 @@ function App() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-neon-blue hover:text-white transition-colors mt-2 font-medium"
                 >
-                  <Github size={18} />
+                  <ExternalLink size={18} />
                   GitHub Repository
                 </a>
               </div>
