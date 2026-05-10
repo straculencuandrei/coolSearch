@@ -12,6 +12,10 @@ use std::ffi::{c_void, OsString};
 use std::mem::size_of;
 use std::os::windows::ffi::OsStringExt;
 
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
+use std::path::PathBuf;
+use tauri::Manager;
 use windows::core::HSTRING;
 use windows::Win32::Foundation::{CloseHandle, GENERIC_READ};
 use windows::Win32::Storage::FileSystem::{
@@ -22,9 +26,6 @@ use windows::Win32::System::Ioctl::{
     FSCTL_ENUM_USN_DATA, MFT_ENUM_DATA_V0, USN_RECORD_V2, USN_RECORD_V3,
 };
 use windows::Win32::System::IO::DeviceIoControl;
-use std::fs::File;
-use std::io::{BufReader, BufWriter};
-use std::path::PathBuf;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct FileRecord {
@@ -58,7 +59,11 @@ lazy_static::lazy_static! {
 }
 
 pub fn get_cache_path(app_handle: &tauri::AppHandle) -> PathBuf {
-    app_handle.path().app_data_dir().unwrap_or_default().join("index_cache.bin")
+    app_handle
+        .path()
+        .app_data_dir()
+        .unwrap_or_default()
+        .join("index_cache.bin")
 }
 
 pub fn save_cache(path: PathBuf, records: Vec<FileRecord>) {
@@ -157,9 +162,15 @@ pub fn start_indexing(cache_path: Option<PathBuf>) {
                     let major_version = unsafe { *(record_ptr.offset(4) as *const u16) };
 
                     if major_version == 2 {
-                        if record_len < size_of::<USN_RECORD_V2>() as u32 { break; }
+                        if record_len < size_of::<USN_RECORD_V2>() as u32 {
+                            break;
+                        }
                         let record = unsafe { &*(record_ptr as *const USN_RECORD_V2) };
-                        if (record.FileNameOffset as u32 + record.FileNameLength as u32) > record_len { break; }
+                        if (record.FileNameOffset as u32 + record.FileNameLength as u32)
+                            > record_len
+                        {
+                            break;
+                        }
 
                         let filename_ptr = unsafe {
                             record_ptr.offset(record.FileNameOffset as isize) as *const u16
@@ -183,9 +194,15 @@ pub fn start_indexing(cache_path: Option<PathBuf>) {
                             },
                         );
                     } else if major_version == 3 {
-                        if record_len < size_of::<USN_RECORD_V3>() as u32 { break; }
+                        if record_len < size_of::<USN_RECORD_V3>() as u32 {
+                            break;
+                        }
                         let record = unsafe { &*(record_ptr as *const USN_RECORD_V3) };
-                        if (record.FileNameOffset as u32 + record.FileNameLength as u32) > record_len { break; }
+                        if (record.FileNameOffset as u32 + record.FileNameLength as u32)
+                            > record_len
+                        {
+                            break;
+                        }
 
                         let filename_ptr = unsafe {
                             record_ptr.offset(record.FileNameOffset as isize) as *const u16

@@ -87,7 +87,6 @@ fn open_url(url: String) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            use tauri::Manager;
             let app_handle = app.handle().clone();
             
             // Try to load from cache first
@@ -99,7 +98,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        // .plugin(tauri_plugin_updater::Builder::new().build()) // Requires pubkey in tauri.conf.json
+        .plugin(tauri_plugin_updater::Builder::new().build()) // Requires pubkey in tauri.conf.json
         .invoke_handler(tauri::generate_handler![
             get_index_status, 
             search_files, 
