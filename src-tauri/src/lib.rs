@@ -65,6 +65,12 @@ fn search_files(query: &str) -> Vec<mft::FileRecord> {
 }
 
 #[tauri::command]
+fn refresh_index(app: tauri::AppHandle) {
+    let cache_path = mft::get_cache_path(&app);
+    mft::start_indexing(Some(cache_path));
+}
+
+#[tauri::command]
 fn open_url(url: String) -> Result<(), String> {
     if !url.starts_with("http") {
         return Err("Invalid URL".to_string());
@@ -80,18 +86,26 @@ fn open_url(url: String) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .setup(|_app| {
-            mft::start_indexing();
+        .setup(|app| {
+            use tauri::Manager;
+            let app_handle = app.handle().clone();
+            
+            // Try to load from cache first
+            if !mft::load_cache(&app_handle) {
+                // If no cache, start indexing
+                let cache_path = mft::get_cache_path(&app_handle);
+                mft::start_indexing(Some(cache_path));
+            }
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
         // .plugin(tauri_plugin_updater::Builder::new().build()) // Requires pubkey in tauri.conf.json
-        .invoke_handler(tauri::generate_handler![
             get_index_status, 
             search_files, 
             get_file_details, 
             open_in_explorer,
-            open_url
+            open_url,
+            refresh_index
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

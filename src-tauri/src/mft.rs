@@ -22,6 +22,9 @@ use windows::Win32::System::Ioctl::{
     FSCTL_ENUM_USN_DATA, MFT_ENUM_DATA_V0, USN_RECORD_V2, USN_RECORD_V3,
 };
 use windows::Win32::System::IO::DeviceIoControl;
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
+use std::path::PathBuf;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct FileRecord {
@@ -46,15 +49,45 @@ pub struct IndexState {
     pub stats: String,
 }
 
-lazy_static::lazy_static! {
     pub static ref GLOBAL_INDEX: Arc<RwLock<IndexState>> = Arc::new(RwLock::new(IndexState {
         is_indexing: false,
         records: Vec::new(),
-        stats: String::new(),
+        stats: "Not Indexed".to_string(),
     }));
 }
 
-pub fn start_indexing() {
+pub fn get_cache_path(app_handle: &tauri::AppHandle) -> PathBuf {
+    app_handle.path().app_data_dir().unwrap_or_default().join("index_cache.bin")
+}
+
+pub fn save_cache(path: PathBuf, records: Vec<FileRecord>) {
+    thread::spawn(move || {
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        if let Ok(file) = File::create(path) {
+            let mut writer = BufWriter::new(file);
+            let _ = bincode::serialize_into(&mut writer, &records);
+        }
+    });
+}
+
+pub fn load_cache(app_handle: &tauri::AppHandle) -> bool {
+    let path = get_cache_path(app_handle);
+    if let Ok(file) = File::open(path) {
+        let reader = BufReader::new(file);
+        if let Ok(records) = bincode::deserialize_from::<_, Vec<FileRecord>>(reader) {
+            let count = records.len();
+            let mut state = GLOBAL_INDEX.write();
+            state.records = records;
+            state.stats = format!("Loaded {} files from cache", count);
+            return true;
+        }
+    }
+    false
+}
+
+pub fn start_indexing(cache_path: Option<PathBuf>) {
     let mut state = GLOBAL_INDEX.write();
     if state.is_indexing {
         return;
@@ -245,6 +278,9 @@ pub fn start_indexing() {
             state.stats = format!("Error: {}", error_msg);
         } else {
             state.stats = format!("Indexed {} files in {:?}", state.records.len(), duration);
+            if let Some(path) = cache_path {
+                save_cache(path, state.records.clone());
+            }
         }
     });
 }

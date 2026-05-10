@@ -234,7 +234,7 @@ function App() {
           className="text-[10px] uppercase tracking-[0.1em] text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 mr-6"
         >
           <Sparkles size={12} />
-          What's New in 0.1.8?
+          What's New in 0.1.9?
         </button>
       </div>
 
@@ -530,7 +530,7 @@ function App() {
                 </div>
                 <div>
                   <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Version</span>
-                  <span className="text-gray-200 font-medium text-base">0.1.8</span>
+                  <span className="text-gray-200 font-medium text-base">0.1.9</span>
                 </div>
                 <button
                   onClick={() => {
@@ -542,6 +542,17 @@ function App() {
                   GitHub Repository
                 </button>
                 <div className="pt-2 border-t border-gray-800/50 mt-2">
+                  <span className="text-gray-500 block mb-2 text-[11px] uppercase tracking-widest">Index Control</span>
+                  <button
+                    onClick={() => {
+                      invoke("refresh_index");
+                      setShowInfo(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 bg-dark-bg border border-gray-800 rounded-xl text-xs hover:border-white/30 transition-all group mb-2"
+                  >
+                    <Terminal size={16} />
+                    <span>Force Re-index</span>
+                  </button>
                   <span className="text-gray-500 block mb-2 text-[11px] uppercase tracking-widest">Appearance</span>
                   <button
                     onClick={() => setCurrentFont(prev => prev === 'sfpro' ? 'jetbrains' : 'sfpro')}
