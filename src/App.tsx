@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
-import { List } from "react-window";
+import { FixedSizeList as List } from "react-window";
 import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench, Sparkles, Download, X } from "lucide-react";
 import "./App.css";
 
@@ -368,13 +368,14 @@ function App() {
               {results.length > 0 ? (
                 <div className="flex-1 overflow-hidden" style={{ position: 'relative' }}>
                   <List
-                    className="custom-scrollbar w-full"
-                    style={{ height: windowHeight - 200 }}
-                    rowCount={results.length}
-                    rowHeight={38}
-                    rowComponent={Row}
-                    rowProps={{}}
-                  />
+                    className="custom-scrollbar"
+                    height={windowHeight - 200}
+                    itemCount={results.length}
+                    itemSize={38}
+                    width="100%"
+                  >
+                    {Row}
+                  </List>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-48 text-gray-500">
