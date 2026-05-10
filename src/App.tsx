@@ -155,43 +155,64 @@ function App() {
 
       {/* Search Container */}
       <div className="flex flex-col items-center justify-start flex-1 w-full max-w-2xl mx-auto mt-4 px-4 z-10">
-        <motion.div
-          animate={{
-            y: query || isFocused ? 0 : 150,
-            scale: query || isFocused ? 1 : 1.05
-          }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="w-full relative"
-        >
-          <div className={`
-            relative group flex items-center bg-dark-surface/80 backdrop-blur-md rounded-xl border 
-            ${isFocused ? 'border-neon-blue shadow-[0_0_15px_rgba(0,243,255,0.15)]' : 'border-gray-800'} 
-            transition-all duration-300 overflow-hidden
-          `}>
-            <div className="pl-3 text-gray-400 group-hover:text-neon-blue transition-colors">
-              <Search size={18} />
-            </div>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              placeholder="Search for files or folders..."
-              className="w-full bg-transparent border-none text-sm text-gray-100 placeholder-gray-600 px-3 py-2.5 focus:outline-none focus:ring-0"
-              spellCheck={false}
-              autoFocus
-            />
-            {query && (
-              <button
-                onClick={() => setQuery('')}
-                className="pr-6 text-gray-500 hover:text-white transition-colors"
+        <AnimatePresence mode="wait">
+          {!selectedFile ? (
+            <motion.div
+              key="search-bar"
+              animate={{
+                y: query || isFocused ? 0 : 150,
+                scale: query || isFocused ? 1 : 1.05
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="w-full relative"
+            >
+              <div className={`
+                relative group flex items-center bg-dark-surface/80 backdrop-blur-md rounded-xl border 
+                ${isFocused ? 'border-neon-blue shadow-[0_0_15px_rgba(0,243,255,0.15)]' : 'border-gray-800'} 
+                transition-all duration-300 overflow-hidden
+              `}>
+                <div className="pl-3 text-gray-400 group-hover:text-neon-blue transition-colors">
+                  <Search size={18} />
+                </div>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder="Search for files or folders..."
+                  className="w-full bg-transparent border-none text-sm text-gray-100 placeholder-gray-600 px-3 py-2.5 focus:outline-none focus:ring-0"
+                  spellCheck={false}
+                  autoFocus
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery('')}
+                    className="pr-6 text-gray-500 hover:text-white transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="back-header"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="w-full"
+            >
+              <button 
+                onClick={() => setSelectedFile(null)}
+                className="flex items-center gap-2 text-gray-400 hover:text-neon-blue transition-all bg-dark-surface/50 hover:bg-dark-surface px-5 py-2.5 rounded-xl border border-gray-800 hover:border-neon-blue/50 group shadow-lg"
               >
-                Clear
+                <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                <span className="text-sm font-medium">Back to results</span>
               </button>
-            )}
-          </div>
-        </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Results / Details Container */}
         <AnimatePresence mode="wait">
@@ -204,14 +225,6 @@ function App() {
               className="w-full mt-6 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 shadow-2xl flex min-h-[400px]"
             >
               <div className="flex-1 flex flex-col items-center justify-center border-r border-gray-800/50 pr-8">
-                <button 
-                  onClick={() => setSelectedFile(null)}
-                  className="absolute top-6 left-6 text-gray-500 hover:text-white flex items-center gap-1 text-xs transition-colors"
-                >
-                  <ArrowLeft size={14} />
-                  Back to results
-                </button>
-                
                 <div className={`mb-6 p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 ${
                    selectedFile.is_dir ? "text-yellow-400" : 
                    ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
