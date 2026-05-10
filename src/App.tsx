@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, HardDrive, Terminal } from "lucide-react";
+import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, Github } from "lucide-react";
 import "./App.css";
 
 interface FileRecord {
@@ -18,6 +18,7 @@ function App() {
   const [results, setResults] = useState<FileRecord[]>([]);
   const [status, setStatus] = useState("Initializing...");
   const [isFocused, setIsFocused] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     // Poll index status
@@ -162,6 +163,58 @@ function App() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Info Button */}
+      <button 
+        onClick={() => setShowInfo(true)}
+        className="absolute bottom-4 right-4 p-2 text-gray-500 hover:text-neon-blue transition-colors z-20"
+      >
+        <Info size={18} />
+      </button>
+
+      {/* Info Modal */}
+      <AnimatePresence>
+        {showInfo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowInfo(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-dark-surface border border-gray-800 p-10 rounded-3xl shadow-2xl max-w-xl w-full flex items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex-1 text-center border-r border-gray-800/50 pr-10">
+                <h2 className="text-4xl font-bold text-neon-blue tracking-tighter">coolSearch</h2>
+              </div>
+              <div className="flex-1 pl-10 flex flex-col gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Credits</span>
+                  <span className="text-gray-200 font-medium text-base">straculencuandrei</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Version</span>
+                  <span className="text-gray-200 font-medium text-base">0.1.0</span>
+                </div>
+                <a 
+                  href="https://github.com/straculencuandrei/coolSearch" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-neon-blue hover:text-white transition-colors mt-2 font-medium"
+                >
+                  <Github size={18} />
+                  GitHub Repository
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
