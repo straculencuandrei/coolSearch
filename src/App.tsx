@@ -129,9 +129,9 @@ function App() {
         <div className={`mr-3 transition-transform group-hover:scale-110 ${getIconColor()}`}>
           {getIcon()}
         </div>
-        <div className="flex-1 truncate py-1">
-          <div className="text-gray-100 font-medium text-[11.5px] truncate">{file.name}</div>
-          <div className="text-[10px] text-gray-500 truncate mt-0.5">{file.path}</div>
+        <div className="flex-1 truncate flex flex-col justify-center py-1.5">
+          <div className="text-gray-100 font-medium text-[11.5px] truncate leading-none mb-1">{file.name}</div>
+          <div className="text-[9.5px] text-gray-500 truncate leading-none">{file.path}</div>
         </div>
       </div>
     );
