@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-app",
-        "width": 800,
-        "height": 600
+        "title": "coolSearch",
+        "width": 900,
+        "height": 700,
+        "minWidth": 600,
+        "minHeight": 500
       }
     ],
     "security": {
