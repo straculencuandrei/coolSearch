@@ -256,7 +256,7 @@ function App() {
             <Wrench size={24} className="text-gray-400 absolute -left-10" />
             <h1 
               data-text="coolSearch"
-              className="chrome-title font-bold text-2xl tracking-[0.1em] uppercase"
+              className="chrome-title font-bold text-2xl tracking-[0.1em] uppercase select-none cursor-default"
               style={{ 
                 '--mouse-x': `${mousePos.x}%`, 
                 '--mouse-y': `${mousePos.y}%` 
@@ -514,7 +514,7 @@ function App() {
                 <h2 
                   data-text="coolSearch"
                   onMouseMove={handleTitleMouseMove}
-                  className="chrome-title text-4xl font-bold tracking-tighter"
+                  className="chrome-title text-4xl font-bold tracking-tighter select-none cursor-default"
                   style={{ 
                     '--mouse-x': `${mousePos.x}%`, 
                     '--mouse-y': `${mousePos.y}%` 
