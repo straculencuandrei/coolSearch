@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code } from "lucide-react";
+import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench } from "lucide-react";
 import "./App.css";
 
 interface FileRecord {
@@ -168,7 +168,7 @@ function App() {
       {/* Search Container */}
       <div className="flex flex-col items-center justify-start flex-1 w-full max-w-2xl mx-auto mt-4 px-4 z-10">
         {!selectedFile && (
-          <motion.h1 
+          <motion.div
             initial={{ opacity: 0, y: 160 }}
             animate={{ 
               opacity: query || isFocused ? 0 : 1, 
@@ -177,10 +177,13 @@ function App() {
               filter: query || isFocused ? 'blur(10px)' : 'blur(0px)'
             }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="text-neon-blue font-bold text-2xl tracking-[0.2em] mb-8 uppercase pointer-events-none"
+            className="flex items-center gap-3 mb-8 pointer-events-none relative"
           >
-            coolSearch
-          </motion.h1>
+            <Wrench size={24} className="text-neon-blue/80 absolute -left-10" />
+            <h1 className="text-neon-blue font-bold text-2xl tracking-[0.1em] uppercase">
+              coolSearch
+            </h1>
+          </motion.div>
         )}
         <AnimatePresence mode="wait">
           {!selectedFile ? (
