@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon } from "lucide-react";
+import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check } from "lucide-react";
 import "./App.css";
 
 interface FileRecord {
@@ -19,6 +19,9 @@ function App() {
   const [status, setStatus] = useState("Initializing...");
   const [isFocused, setIsFocused] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null);
+  const [details, setDetails] = useState<{ size: number, created: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // Poll index status
@@ -47,6 +50,39 @@ function App() {
     const timeout = setTimeout(fetchResults, 100);
     return () => clearTimeout(timeout);
   }, [query]);
+
+  const handleFileClick = async (file: FileRecord) => {
+    setSelectedFile(file);
+    try {
+      const res = await invoke<{ size: number, created: string }>("get_file_details", { path: file.path });
+      setDetails(res);
+    } catch (e) {
+      console.error(e);
+      setDetails(null);
+    }
+  };
+
+  const copyPath = () => {
+    if (selectedFile) {
+      navigator.clipboard.writeText(selectedFile.path);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const openExplorer = async () => {
+    if (selectedFile) {
+      await invoke("open_in_explorer", { path: selectedFile.path });
+    }
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const Row = ({ index, style }: any) => {
     const file = results[index];
@@ -79,9 +115,10 @@ function App() {
     return (
       <div
         style={style}
-        className="flex items-center px-4 border-b border-gray-800/50 hover:bg-dark-surface transition-colors cursor-pointer"
+        onClick={() => handleFileClick(file)}
+        className="flex items-center px-4 border-b border-gray-800/50 hover:bg-dark-surface/80 transition-colors cursor-pointer group"
       >
-        <div className={`mr-3 ${getIconColor()}`}>
+        <div className={`mr-3 transition-transform group-hover:scale-110 ${getIconColor()}`}>
           {getIcon()}
         </div>
         <div className="flex-1 truncate py-1">
@@ -156,16 +193,90 @@ function App() {
           </div>
         </motion.div>
 
-        {/* Results */}
-        <AnimatePresence>
-          {query && (
+        {/* Results / Details Container */}
+        <AnimatePresence mode="wait">
+          {selectedFile ? (
             <motion.div
+              key="details"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="w-full mt-6 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 shadow-2xl flex min-h-[400px]"
+            >
+              <div className="flex-1 flex flex-col items-center justify-center border-r border-gray-800/50 pr-8">
+                <button 
+                  onClick={() => setSelectedFile(null)}
+                  className="absolute top-6 left-6 text-gray-500 hover:text-white flex items-center gap-1 text-xs transition-colors"
+                >
+                  <ArrowLeft size={14} />
+                  Back to results
+                </button>
+                
+                <div className={`mb-6 p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 ${
+                   selectedFile.is_dir ? "text-yellow-400" : 
+                   ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
+                   ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
+                   "text-neon-blue"
+                }`}>
+                   {selectedFile.is_dir ? <Folder size={64} /> : 
+                    ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? <Music size={64} /> :
+                    ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={64} /> :
+                    <FileIcon size={64} />
+                   }
+                </div>
+                <h2 className="text-2xl font-bold text-center break-all">{selectedFile.name}</h2>
+                <p className="text-gray-500 text-xs mt-2 uppercase tracking-widest">{selectedFile.is_dir ? 'Directory' : 'File'}</p>
+              </div>
+
+              <div className="flex-1 pl-8 flex flex-col justify-center gap-6">
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Absolute Path</span>
+                  <p className="text-sm text-gray-300 break-all font-mono bg-dark-bg/30 p-3 rounded-lg border border-gray-800/30">
+                    {selectedFile.path}
+                  </p>
+                  <div className="flex gap-2 mt-2">
+                    <button 
+                      onClick={copyPath}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-neon-blue transition-colors"
+                    >
+                      {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                      {copied ? 'Copied!' : 'Copy Path'}
+                    </button>
+                    <button 
+                      onClick={openExplorer}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-neon-blue transition-colors"
+                    >
+                      <FolderOpen size={14} />
+                      Open in Explorer
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Size</span>
+                    <p className="text-lg font-medium text-neon-blue">
+                      {details ? formatSize(details.size) : 'Loading...'}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Created</span>
+                    <p className="text-sm font-medium text-gray-300">
+                      {details ? details.created : 'Loading...'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : query && (
+            <motion.div
+              key="results"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
               className="w-full mt-6 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-8 shadow-2xl flex flex-col"
-              style={{ maxHeight: 'calc(100vh - 250px)' }}
+              style={{ maxHeight: 'calc(100vh - 200px)' }}
             >
               {results.length > 0 ? (
                 <div className="flex-1 overflow-hidden" style={{ position: 'relative' }}>

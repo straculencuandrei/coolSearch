@@ -10,6 +10,39 @@ fn get_index_status() -> String {
     }
 }
 
+#[derive(serde::Serialize)]
+pub struct FileDetails {
+    pub size: u64,
+    pub created: String,
+}
+
+#[tauri::command]
+fn get_file_details(path: String) -> Result<FileDetails, String> {
+    use std::fs;
+    use std::time::SystemTime;
+    use chrono::{DateTime, Local};
+
+    let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+    let created: SystemTime = metadata.created().unwrap_or(SystemTime::now());
+    let datetime: DateTime<Local> = created.into();
+    
+    Ok(FileDetails {
+        size: metadata.len(),
+        created: datetime.format("%Y-%m-%d %H:%M:%S").to_string(),
+    })
+}
+
+#[tauri::command]
+fn open_in_explorer(path: String) -> Result<(), String> {
+    use std::process::Command;
+    Command::new("explorer")
+        .arg("/select,")
+        .arg(path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 fn search_files(query: &str) -> Vec<mft::FileRecord> {
     if query.is_empty() {
@@ -26,7 +59,12 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_index_status, search_files])
+        .invoke_handler(tauri::generate_handler![
+            get_index_status, 
+            search_files, 
+            get_file_details, 
+            open_in_explorer
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
