@@ -256,7 +256,7 @@ Enjoy the new themes and enhanced experience! 🚀`;
       </div>
 
       {/* Search Container */}
-      <div className="flex flex-col items-center justify-start flex-1 w-full max-w-2xl mx-auto mt-4 px-4 z-10">
+      <div className="flex flex-col items-center justify-start flex-1 w-full max-w-4xl mx-auto mt-0 px-4 z-10">
         {!selectedFile && (
           <motion.div
             initial={{ opacity: 0, y: 60 }}
@@ -351,7 +351,7 @@ Enjoy the new themes and enhanced experience! 🚀`;
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className={`w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row min-h-0 flex-1 mb-6 overflow-hidden ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              className={`w-full mt-0 max-w-3xl mx-auto bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-5 shadow-2xl flex flex-col md:flex-row min-h-0 flex-1 mb-6 overflow-hidden ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
             >
               <div className="flex-[0.8] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-800/50 pb-6 md:pb-0 md:pr-8">
                 <div className={`mb-6 p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 ${selectedFile.is_dir ? "text-yellow-400" :
