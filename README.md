@@ -29,3 +29,12 @@ To reconstruct the full path:
 The frontend is a modern **React** application that communicates with the Rust engine via **Tauri**. 
 - **Virtualized Rendering:** To handle results that could contain millions of files, we use **virtualized lists**. This ensures that the browser only renders the few dozen files you see on the screen at any given time, keeping the UI buttery smooth.
 - **Tauri IPC:** Search queries are sent from the search bar to the Rust engine through an asynchronous bridge, allowing the search to happen in a background thread without ever freezing the interface.
+
+## Security & Hardening
+
+Given its high-privilege nature, coolSearch implements several layers of security to ensure system integrity:
+
+- **Memory-Safe MFT Parsing:** The Rust backend implements strict boundary validation for all USN journal records, preventing buffer overflows or out-of-bounds reads from malformed filesystem data.
+- **Path Sanitization:** All filesystem actions (Metadata, Copy Path, Open Explorer) are protected by a validation layer that enforces absolute path usage and prevents directory traversal attacks (`..`).
+- **Content Security Policy (CSP):** The frontend is restricted by a strict CSP, allowing the `asset:` protocol only for local image rendering while blocking unauthorized external resources.
+
