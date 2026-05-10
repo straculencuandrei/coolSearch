@@ -13,10 +13,11 @@
     "windows": [
       {
         "title": "coolSearch",
-        "width": 900,
-        "height": 700,
+        "width": 1031,
+        "height": 531,
         "minWidth": 600,
-        "minHeight": 500
+        "minHeight": 500,
+        "center": true
       }
     ],
     "security": {
