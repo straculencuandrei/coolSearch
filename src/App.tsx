@@ -58,9 +58,9 @@ function App() {
         <div className="mr-3 text-neon-blue">
           {file.is_dir ? <Folder size={16} /> : <FileIcon size={16} />}
         </div>
-        <div className="flex-1 truncate py-1.5">
-          <div className="text-gray-100 font-medium text-sm truncate">{file.name}</div>
-          <div className="text-[11px] text-gray-500 truncate mt-0.5">{file.path}</div>
+        <div className="flex-1 truncate py-1">
+          <div className="text-gray-100 font-medium text-[13px] truncate">{file.name}</div>
+          <div className="text-[10px] text-gray-500 truncate mt-0.5">{file.path}</div>
         </div>
       </div>
     );
@@ -72,10 +72,10 @@ function App() {
       <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-neon-blue/10 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Header & Status */}
-      <div className="flex items-center justify-between p-3 z-10">
-        <div className="flex items-center gap-2 text-neon-blue font-bold text-base tracking-wider">
-          <HardDrive size={20} />
-          <span>ANTIGRAVITY</span>
+      <div className="flex items-center justify-between p-2 z-10">
+        <div className="flex items-center gap-2 text-neon-blue font-bold text-sm tracking-wider">
+          <HardDrive size={18} />
+          <span>coolSearch</span>
         </div>
         <div className="text-xs font-mono text-gray-400 bg-dark-surface px-3 py-1 rounded-full border border-gray-800 flex items-center gap-2">
           {status.includes("Indexing") ? (
@@ -101,12 +101,12 @@ function App() {
           className="w-full relative"
         >
           <div className={`
-            relative group flex items-center bg-dark-surface/80 backdrop-blur-md rounded-2xl border 
-            ${isFocused ? 'border-neon-blue shadow-[0_0_20px_rgba(0,243,255,0.2)]' : 'border-gray-800'} 
+            relative group flex items-center bg-dark-surface/80 backdrop-blur-md rounded-xl border 
+            ${isFocused ? 'border-neon-blue shadow-[0_0_15px_rgba(0,243,255,0.15)]' : 'border-gray-800'} 
             transition-all duration-300 overflow-hidden
           `}>
-            <div className="pl-4 text-gray-400 group-hover:text-neon-blue transition-colors">
-              <Search size={20} />
+            <div className="pl-3 text-gray-400 group-hover:text-neon-blue transition-colors">
+              <Search size={18} />
             </div>
             <input
               type="text"
@@ -115,7 +115,7 @@ function App() {
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               placeholder="Search for files or folders..."
-              className="w-full bg-transparent border-none text-base text-gray-100 placeholder-gray-600 px-3 py-4 focus:outline-none focus:ring-0"
+              className="w-full bg-transparent border-none text-sm text-gray-100 placeholder-gray-600 px-3 py-2.5 focus:outline-none focus:ring-0"
               spellCheck={false}
               autoFocus
             />
@@ -145,9 +145,9 @@ function App() {
                 <div className="flex-1 overflow-hidden" style={{ position: 'relative' }}>
                   <List
                     className="custom-scrollbar w-full"
-                    style={{ height: window.innerHeight - 250 }}
+                    style={{ height: window.innerHeight - 200 }}
                     rowCount={results.length}
-                    rowHeight={45}
+                    rowHeight={38}
                     rowComponent={Row}
                     rowProps={{}}
                   />
