@@ -130,7 +130,7 @@ function App() {
           {getIcon()}
         </div>
         <div className="flex-1 truncate py-1">
-          <div className="text-gray-100 font-medium text-[13px] truncate">{file.name}</div>
+          <div className="text-gray-100 font-medium text-[11.5px] truncate">{file.name}</div>
           <div className="text-[10px] text-gray-500 truncate mt-0.5">{file.path}</div>
         </div>
       </div>
@@ -251,7 +251,7 @@ function App() {
                     <FileIcon size={64} />
                    }
                 </div>
-                <h2 className="text-2xl font-bold text-center break-all">{selectedFile.name}</h2>
+                <h2 className="text-xl font-bold text-center break-all">{selectedFile.name}</h2>
                 <p className="text-gray-500 text-xs mt-2 uppercase tracking-widest">{selectedFile.is_dir ? 'Directory' : 'File'}</p>
               </div>
 
