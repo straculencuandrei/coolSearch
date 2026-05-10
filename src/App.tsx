@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check } from "lucide-react";
+import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code } from "lucide-react";
 import "./App.css";
 
 interface FileRecord {
@@ -23,6 +23,7 @@ function App() {
   const [details, setDetails] = useState<{ size: number, created: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+  const [currentFont, setCurrentFont] = useState<'sfpro' | 'jetbrains'>('sfpro');
 
   useEffect(() => {
     const handleResize = () => setWindowHeight(window.innerHeight);
@@ -137,7 +138,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-gray-100 flex flex-col font-sans relative overflow-hidden">
+    <div className={`min-h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-hidden ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
       {/* Decorative neon glow */}
       <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-neon-blue/10 blur-[120px] rounded-full pointer-events-none" />
 
@@ -372,6 +373,16 @@ function App() {
                   <ExternalLink size={18} />
                   GitHub Repository
                 </button>
+                <div className="pt-2 border-t border-gray-800/50 mt-2">
+                  <span className="text-gray-500 block mb-2 text-[11px] uppercase tracking-widest">Appearance</span>
+                  <button 
+                    onClick={() => setCurrentFont(prev => prev === 'sfpro' ? 'jetbrains' : 'sfpro')}
+                    className="flex items-center gap-2 w-full px-3 py-2 bg-dark-bg border border-gray-800 rounded-xl text-xs hover:border-neon-blue transition-all group"
+                  >
+                    {currentFont === 'sfpro' ? <Type size={16} /> : <Code size={16} />}
+                    <span>Switch to {currentFont === 'sfpro' ? 'JetBrains Mono' : 'SF Pro Display'}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
