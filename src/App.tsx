@@ -55,7 +55,7 @@ function App() {
 
   const fetchReleaseNotes = async () => {
     // Hardcoded release notes for offline access
-    const releaseNotesText = `🎉 coolSearch v0.1.9 - Major UI Overhaul & Theming
+    const releaseNotesText = `🎉 coolSearch v0.1.91 - Major UI Overhaul & Theming
 
 🎨 UI/UX Enhancements
 • Multi-Theme Support: Added 5 beautiful themes (Matte Dark, Light, Neon Blue, Red, Green) with full CSS variable theming system
@@ -81,7 +81,7 @@ function App() {
 • Improved error handling for cache operations
 
 Installation Options:
-• Download the portable coolSearch_0.1.9.exe for instant use
+• Download the portable coolSearch_0.1.91.exe for instant use
 • Use the MSI installer for system integration
 • NSIS setup for guided installation
 
