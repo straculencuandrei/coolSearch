@@ -4,11 +4,21 @@
   --color-neon-blue: #00f3ff;
   --color-dark-bg: #0f0f13;
   --color-dark-surface: #1a1a24;
+  --font-sans: 'Outfit', sans-serif;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('./assets/outfit-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
 }
 
 @layer base {
   body {
-    @apply bg-dark-bg text-gray-100 font-sans overflow-hidden;
+    @apply bg-dark-bg text-gray-100 overflow-hidden;
+    font-family: 'Outfit', sans-serif;
     margin: 0;
     padding: 0;
   }
