@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
 import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check } from "lucide-react";
@@ -228,12 +228,18 @@ function App() {
                 <div className={`mb-6 p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 ${
                    selectedFile.is_dir ? "text-yellow-400" : 
                    ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
-                   ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
+                   ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500 p-0 overflow-hidden" :
                    "text-neon-blue"
                 }`}>
                    {selectedFile.is_dir ? <Folder size={64} /> : 
                     ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? <Music size={64} /> :
-                    ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={64} /> :
+                    ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? (
+                      <img 
+                        src={convertFileSrc(selectedFile.path)} 
+                        alt={selectedFile.name}
+                        className="w-48 h-48 object-contain rounded-xl shadow-2xl bg-black/20"
+                      />
+                    ) :
                     <FileIcon size={64} />
                    }
                 </div>
