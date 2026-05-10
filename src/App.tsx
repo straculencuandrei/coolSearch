@@ -51,12 +51,25 @@ function App() {
   const Row = ({ index, style }: any) => {
     const file = results[index];
     if (!file) return null;
+
+    const getIconColor = () => {
+      if (file.is_dir) return "text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]";
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (['mp3', 'wav', 'flac'].includes(ext || '')) {
+        return "text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]";
+      }
+      if (['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext || '')) {
+        return "text-green-500 drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]";
+      }
+      return "text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.5)]";
+    };
+
     return (
       <div
         style={style}
         className="flex items-center px-4 border-b border-gray-800/50 hover:bg-dark-surface transition-colors cursor-pointer"
       >
-        <div className="mr-3 text-neon-blue">
+        <div className={`mr-3 ${getIconColor()}`}>
           {file.is_dir ? <Folder size={16} /> : <FileIcon size={16} />}
         </div>
         <div className="flex-1 truncate py-1">
