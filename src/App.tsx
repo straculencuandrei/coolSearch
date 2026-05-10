@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink } from "lucide-react";
+import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon } from "lucide-react";
 import "./App.css";
 
 interface FileRecord {
@@ -64,13 +64,25 @@ function App() {
       return "text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.5)]";
     };
 
+    const getIcon = () => {
+      if (file.is_dir) return <Folder size={16} />;
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (['mp3', 'wav', 'flac'].includes(ext || '')) {
+        return <Music size={16} />;
+      }
+      if (['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext || '')) {
+        return <ImageIcon size={16} />;
+      }
+      return <FileIcon size={16} />;
+    };
+
     return (
       <div
         style={style}
         className="flex items-center px-4 border-b border-gray-800/50 hover:bg-dark-surface transition-colors cursor-pointer"
       >
         <div className={`mr-3 ${getIconColor()}`}>
-          {file.is_dir ? <Folder size={16} /> : <FileIcon size={16} />}
+          {getIcon()}
         </div>
         <div className="flex-1 truncate py-1">
           <div className="text-gray-100 font-medium text-[13px] truncate">{file.name}</div>
