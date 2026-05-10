@@ -49,6 +49,7 @@ pub struct IndexState {
     pub stats: String,
 }
 
+lazy_static::lazy_static! {
     pub static ref GLOBAL_INDEX: Arc<RwLock<IndexState>> = Arc::new(RwLock::new(IndexState {
         is_indexing: false,
         records: Vec::new(),
