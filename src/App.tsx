@@ -3,6 +3,7 @@ import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
 import { Search, File as FileIcon, Folder, HardDrive, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check } from "lucide-react";
+import AutoSizer from "react-virtualized-auto-sizer";
 import "./App.css";
 
 interface FileRecord {
@@ -222,9 +223,9 @@ function App() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="w-full mt-6 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 shadow-2xl flex min-h-[400px]"
+              className="w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row min-h-0 flex-1 mb-6 overflow-hidden"
             >
-              <div className="flex-1 flex flex-col items-center justify-center border-r border-gray-800/50 pr-8">
+              <div className="flex-[0.8] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-800/50 pb-6 md:pb-0 md:pr-8">
                 <div className={`mb-6 p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 ${
                    selectedFile.is_dir ? "text-yellow-400" : 
                    ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
@@ -294,22 +295,26 @@ function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full mt-6 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-8 shadow-2xl flex flex-col"
-              style={{ maxHeight: 'calc(100vh - 200px)' }}
+              className="w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-6 shadow-2xl flex flex-col"
             >
               {results.length > 0 ? (
-                <div className="flex-1 overflow-hidden" style={{ position: 'relative' }}>
-                  <List
-                    className="custom-scrollbar w-full"
-                    style={{ height: window.innerHeight - 200 }}
-                    rowCount={results.length}
-                    rowHeight={38}
-                    rowComponent={Row}
-                    rowProps={{}}
-                  />
+                <div className="flex-1 w-full h-full">
+                  <AutoSizer>
+                    {({ height, width }: any) => (
+                      <List
+                        className="custom-scrollbar"
+                        height={height}
+                        width={width}
+                        rowCount={results.length}
+                        rowHeight={40}
+                      >
+                        {Row}
+                      </List>
+                    )}
+                  </AutoSizer>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-48 text-gray-500">
+                <div className="flex flex-col items-center justify-center h-full text-gray-500 py-20">
                   <Terminal size={32} className="mb-2 opacity-50" />
                   <p>No results found for "{query}"</p>
                 </div>
