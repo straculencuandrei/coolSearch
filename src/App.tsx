@@ -28,6 +28,14 @@ function App() {
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const [releaseNotes, setReleaseNotes] = useState<string>("");
   const [showNotes, setShowNotes] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+
+  const handleTitleMouseMove = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePos({ x, y });
+  };
 
   useEffect(() => {
     const checkForUpdates = async () => {
@@ -171,7 +179,7 @@ function App() {
       if (['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext || '')) {
         return "text-green-500 drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]";
       }
-      return "text-neon-blue drop-shadow-[0_0_5px_rgba(0,243,255,0.5)]";
+      return "text-gray-400";
     };
 
     const getIcon = () => {
@@ -205,16 +213,16 @@ function App() {
 
   return (
     <div className={`min-h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-hidden ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
-      {/* Decorative neon glow */}
-      <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-neon-blue/10 blur-[120px] rounded-full pointer-events-none" />
+      {/* Background with subtle matte finish */}
+      <div className="absolute inset-0 bg-dark-bg pointer-events-none" />
 
       {/* Header & Status */}
       <div className="flex flex-col items-end p-6 px-10 z-10 gap-2">
         <div className="text-xs font-mono text-gray-400 bg-dark-surface px-4 py-1.5 rounded-full border border-gray-800 flex items-center gap-2 -translate-x-4">
           {status.includes("Indexing") ? (
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-blue opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-blue"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-400"></span>
             </span>
           ) : (
             <span className="h-2 w-2 rounded-full bg-green-500"></span>
@@ -223,7 +231,7 @@ function App() {
         </div>
         <button
           onClick={fetchReleaseNotes}
-          className="text-[10px] uppercase tracking-[0.1em] text-gray-500 hover:text-neon-blue transition-colors flex items-center gap-1.5 mr-6"
+          className="text-[10px] uppercase tracking-[0.1em] text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 mr-6"
         >
           <Sparkles size={12} />
           What's New in 0.1.8?
@@ -242,10 +250,18 @@ function App() {
               filter: query || isFocused ? 'blur(10px)' : 'blur(0px)'
             }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="flex items-center gap-3 mb-8 pointer-events-none relative"
+            onMouseMove={handleTitleMouseMove}
+            className="flex items-center gap-3 mb-8 relative"
           >
-            <Wrench size={24} className="text-neon-blue/80 absolute -left-10" />
-            <h1 className="text-neon-blue font-bold text-2xl tracking-[0.1em] uppercase">
+            <Wrench size={24} className="text-gray-400 absolute -left-10" />
+            <h1 
+              data-text="coolSearch"
+              className="chrome-title font-bold text-2xl tracking-[0.1em] uppercase"
+              style={{ 
+                '--mouse-x': `${mousePos.x}%`, 
+                '--mouse-y': `${mousePos.y}%` 
+              } as any}
+            >
               coolSearch
             </h1>
           </motion.div>
@@ -262,11 +278,11 @@ function App() {
               className="w-full relative"
             >
               <div className={`
-                relative group flex items-center bg-dark-surface/80 backdrop-blur-md rounded-xl border 
-                ${isFocused ? 'border-neon-blue shadow-[0_0_15px_rgba(0,243,255,0.15)]' : 'border-gray-800'} 
+                relative group flex items-center bg-dark-surface/80 backdrop-blur-md rounded-xl matte-border
+                ${isFocused ? 'matte-border-focus' : 'border-gray-800'} 
                 transition-all duration-300 overflow-hidden
               `}>
-                <div className="pl-3 text-gray-400 group-hover:text-neon-blue transition-colors">
+                <div className="pl-3 text-gray-400 group-hover:text-white transition-colors">
                   <Search size={18} />
                 </div>
                 <input
@@ -300,7 +316,7 @@ function App() {
             >
               <button
                 onClick={() => setSelectedFile(null)}
-                className="flex items-center gap-2 text-gray-400 hover:text-neon-blue transition-all bg-dark-surface/50 hover:bg-dark-surface px-5 py-2.5 rounded-xl border border-gray-800 hover:border-neon-blue/50 group shadow-lg"
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-all bg-dark-surface/50 hover:bg-dark-surface px-5 py-2.5 rounded-xl border border-gray-800 hover:border-white/20 group shadow-lg"
               >
                 <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
                 <span className="text-sm font-medium">Back to results</span>
@@ -323,7 +339,7 @@ function App() {
                 <div className={`mb-6 p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 ${selectedFile.is_dir ? "text-yellow-400" :
                   ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
                     ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500 p-0 overflow-hidden" :
-                      "text-neon-blue"
+                      "text-gray-400"
                   }`}>
                   {selectedFile.is_dir ? <Folder size={64} /> :
                     ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? <Music size={64} /> :
@@ -350,14 +366,14 @@ function App() {
                   <div className="flex gap-2 mt-2">
                     <button
                       onClick={copyPath}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-neon-blue transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors"
                     >
                       {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                       {copied ? 'Copied!' : 'Copy Path'}
                     </button>
                     <button
                       onClick={openExplorer}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-neon-blue transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors"
                     >
                       <FolderOpen size={14} />
                       Open in Explorer
@@ -368,7 +384,7 @@ function App() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Size</span>
-                    <p className="text-lg font-medium text-neon-blue">
+                    <p className="text-lg font-medium text-gray-200">
                       {details ? formatSize(details.size) : 'Loading...'}
                     </p>
                   </div>
@@ -416,7 +432,7 @@ function App() {
       {/* Info Button */}
       <button
         onClick={() => setShowInfo(true)}
-        className="absolute bottom-4 right-4 p-2 text-gray-500 hover:text-neon-blue transition-colors z-20"
+        className="absolute bottom-4 right-4 p-2 text-gray-500 hover:text-white transition-colors z-20"
       >
         <Info size={18} />
       </button>
@@ -434,7 +450,7 @@ function App() {
               onClick={async () => {
                 await updateAvailable.downloadAndInstall();
               }}
-              className="flex items-center gap-2 bg-neon-blue text-dark-bg font-bold px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(0,243,255,0.3)] hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
+              className="flex items-center gap-2 bg-gray-200 text-dark-bg font-bold px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
             >
               <Download size={18} />
               Update to {updateAvailable.version}
@@ -462,7 +478,7 @@ function App() {
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <Sparkles className="text-neon-blue" size={24} />
+                  <Sparkles className="text-gray-400" size={24} />
                   <h2 className="text-xl font-bold tracking-tight">Latest Release Changes</h2>
                 </div>
                 <button onClick={() => setShowNotes(false)} className="text-gray-500 hover:text-white transition-colors">
@@ -495,7 +511,17 @@ function App() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex-1 text-center border-r border-gray-800/50 pr-10">
-                <h2 className="text-4xl font-bold text-neon-blue tracking-tighter">coolSearch</h2>
+                <h2 
+                  data-text="coolSearch"
+                  onMouseMove={handleTitleMouseMove}
+                  className="chrome-title text-4xl font-bold tracking-tighter"
+                  style={{ 
+                    '--mouse-x': `${mousePos.x}%`, 
+                    '--mouse-y': `${mousePos.y}%` 
+                  } as any}
+                >
+                  coolSearch
+                </h2>
               </div>
               <div className="flex-1 pl-10 flex flex-col gap-4 text-sm">
                 <div>
@@ -510,7 +536,7 @@ function App() {
                   onClick={() => {
                     invoke("open_url", { url: "https://github.com/straculencuandrei/coolSearch" });
                   }}
-                  className="flex items-center gap-2 text-neon-blue hover:text-white transition-colors mt-2 font-medium bg-transparent border-none p-0"
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mt-2 font-medium bg-transparent border-none p-0"
                 >
                   <ExternalLink size={18} />
                   GitHub Repository
@@ -519,7 +545,7 @@ function App() {
                   <span className="text-gray-500 block mb-2 text-[11px] uppercase tracking-widest">Appearance</span>
                   <button
                     onClick={() => setCurrentFont(prev => prev === 'sfpro' ? 'jetbrains' : 'sfpro')}
-                    className="flex items-center gap-2 w-full px-3 py-2 bg-dark-bg border border-gray-800 rounded-xl text-xs hover:border-neon-blue transition-all group"
+                    className="flex items-center gap-2 w-full px-3 py-2 bg-dark-bg border border-gray-800 rounded-xl text-xs hover:border-white/30 transition-all group"
                   >
                     {currentFont === 'sfpro' ? <Type size={16} /> : <Code size={16} />}
                     <span>Switch to {currentFont === 'sfpro' ? 'JetBrains Mono' : 'SF Pro Display'}</span>
