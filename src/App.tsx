@@ -44,10 +44,11 @@ function App() {
       try {
         const update = await check();
         if (update) {
+          console.log("Update available:", update.version);
           setUpdateAvailable(update);
         }
       } catch (e) {
-        console.error("Update check failed", e);
+        console.error("Update check failed:", e);
       }
     };
     checkForUpdates();
@@ -229,7 +230,7 @@ Enjoy the new themes and enhanced experience! 🚀`;
   };
 
   return (
-    <div className={`min-h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-hidden theme-${currentTheme} ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
+    <div className={`min-h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-y-auto overflow-x-hidden theme-${currentTheme} ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
       {/* Background with subtle matte finish */}
       <div className="absolute inset-0 bg-dark-bg pointer-events-none" />
 
