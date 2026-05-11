@@ -6,7 +6,7 @@ import { Search, File as FileIcon, Folder, Terminal, Info, ExternalLink, Music, 
 import { check } from "@tauri-apps/plugin-updater";
 import "./App.css";
 
-const CURRENT_VERSION = "0.1.91";
+const CURRENT_VERSION = "0.1.92";
 
 interface FileRecord {
   id: number;
@@ -58,37 +58,34 @@ function App() {
 
   const fetchReleaseNotes = async () => {
     // Hardcoded release notes for offline access
-    const releaseNotesText = `🎉 coolSearch v0.1.91 - Major UI Overhaul & Theming
+    const releaseNotesText = `🎉 coolSearch v0.1.92 - Auto-Update Feature & UI Refinements
 
-🎨 UI/UX Enhancements
-• Multi-Theme Support: Added 5 beautiful themes (Matte Dark, Light, Neon Blue, Red, Green) with full CSS variable theming system
-• Settings Panel: New settings modal accessible via wrench icon for theme and font selection
-• Improved Animations: Smoother transitions and better positioning for the search interface
-• Enhanced Styling: Neon glow effects for neon themes, improved color consistency across all themes
+✨ New Features
+• Auto-Update System: The app now automatically detects new releases on GitHub and prompts you to update
+• Seamless Updates: Updates download and install without requiring a full reinstall
+• Version Detection: Smart version comparison ensures update button only appears for newer releases
 
-🖼️ Icon Updates
-• Completely refreshed all app icons (32x32, 128x128, Store logos, etc.) with modern, high-quality designs
-• Significantly larger file sizes indicating premium graphics quality
+🎨 UI/UX Improvements
+• Refined File Title: Changed from bold to light font weight for a more elegant appearance
+• Better Overflow Handling: Fixed layout overflow issues in the main container
+• Enhanced Update Button: Centered update notification at the bottom of the screen
 
 🔧 Backend Improvements
-• Cache Reliability: Fixed potential crash in cache loading by using temp directory fallback
-• Code Cleanup: Minor formatting and import organization improvements in Rust code
-• Security Update: Updated public key for app auto-updates
-
-📦 Distribution
-• Standalone executable (portable)
-• MSI installer for Windows
-• NSIS setup installer
+• Version Sync: Fixed version mismatch between tauri.conf.json and app version
+• Update Detection: Integrated GitHub releases API for automatic update checking on startup
+• Error Handling: Improved robustness of update check mechanism
 
 🐛 Bug Fixes
-• Improved error handling for cache operations
+• Fixed invisible button text in light theme
+• Resolved update button clipping on smaller screens
+• Corrected version tracking for accurate update detection
 
 Installation Options:
-• Download the portable coolSearch_0.1.91.exe for instant use
+• Download the portable coolSearch_0.1.92.exe for instant use
 • Use the MSI installer for system integration
 • NSIS setup for guided installation
 
-Enjoy the new themes and enhanced experience! 🚀`;
+The update system is now fully functional! 🚀`;
 
     setReleaseNotes(releaseNotesText);
     setShowNotes(true);
@@ -254,7 +251,7 @@ Enjoy the new themes and enhanced experience! 🚀`;
           className="text-[10px] uppercase tracking-[0.1em] text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 mr-6"
         >
           <Sparkles size={12} />
-          What's New in 0.1.91?
+          What's New in 0.1.92?
         </button>
       </div>
 
