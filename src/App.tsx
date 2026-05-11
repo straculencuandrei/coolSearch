@@ -6,6 +6,8 @@ import { Search, File as FileIcon, Folder, Terminal, Info, ExternalLink, Music, 
 import { check } from "@tauri-apps/plugin-updater";
 import "./App.css";
 
+const CURRENT_VERSION = "0.1.91";
+
 interface FileRecord {
   id: number;
   parent_id: number;
@@ -466,7 +468,7 @@ Enjoy the new themes and enhanced experience! 🚀`;
 
       {/* Update Button */}
       <AnimatePresence>
-        {updateAvailable && (
+        {updateAvailable && updateAvailable.version !== CURRENT_VERSION && (
           <motion.div
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
