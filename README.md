@@ -1,5 +1,7 @@
 # coolSearch
 
+![coolSearch preview](./screenshots/Screenshot 2026-05-11 081854.png)
+
 A high-performance, instantaneous file search utility for Windows built with Tauri, Rust, and React.
 
 ## Description
