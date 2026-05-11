@@ -371,7 +371,7 @@ Enjoy the new themes and enhanced experience! 🚀`;
                         <FileIcon size={64} />
                   }
                 </div>
-                <h2 className="text-xl font-bold text-center break-all">{selectedFile.name}</h2>
+                <h2 className="text-xl font-light text-center break-all">{selectedFile.name}</h2>
                 <p className="text-gray-500 text-xs mt-2 uppercase tracking-widest">{selectedFile.is_dir ? 'Directory' : 'File'}</p>
               </div>
 
