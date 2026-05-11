@@ -198,6 +198,10 @@
   color: #86868b !important;
 }
 
+.theme-light button {
+  color: #1d1d1f !important;
+}
+
 /* Custom scrollbar for webkit */
 ::-webkit-scrollbar {
   width: 8px;

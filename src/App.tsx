@@ -6,7 +6,7 @@ import { Search, File as FileIcon, Folder, Terminal, Info, ExternalLink, Music, 
 import { check } from "@tauri-apps/plugin-updater";
 import "./App.css";
 
-const CURRENT_VERSION = "0.1.92";
+const CURRENT_VERSION = "0.1.91";
 
 interface FileRecord {
   id: number;
@@ -58,7 +58,7 @@ function App() {
 
   const fetchReleaseNotes = async () => {
     // Hardcoded release notes for offline access
-    const releaseNotesText = `🎉 coolSearch v0.1.92 - Auto-Update Feature & UI Refinements
+    const releaseNotesText = `🎉 coolSearch v0.1.91 - Auto-Update Feature & UI Refinements
 
 ✨ New Features
 • Auto-Update System: The app now automatically detects new releases on GitHub and prompts you to update
@@ -81,7 +81,7 @@ function App() {
 • Corrected version tracking for accurate update detection
 
 Installation Options:
-• Download the portable coolSearch_0.1.92.exe for instant use
+• Download the portable coolSearch_0.1.91.exe for instant use
 • Use the MSI installer for system integration
 • NSIS setup for guided installation
 
@@ -251,7 +251,7 @@ The update system is now fully functional! 🚀`;
           className="text-[10px] uppercase tracking-[0.1em] text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 mr-6"
         >
           <Sparkles size={12} />
-          What's New in 0.1.92?
+          What's New in 0.1.91?
         </button>
       </div>
 
