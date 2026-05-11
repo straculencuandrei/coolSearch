@@ -13,24 +13,72 @@ A high-performance, instantaneous file search utility for Windows built with Tau
 To achieve near-instantaneous indexing of an entire hard drive, coolSearch bypasses standard file system APIs and interacts directly with the low-level storage structures of Windows.
 
 ### 1. Privilege Elevation & Volume Access
-Accessing the raw data of a hard drive is a sensitive operation. coolSearch is configured with a custom Windows Manifest that requests **Administrator privileges** on startup. This elevation allows the Rust backend to open a "raw handle" to the physical volume (like `\\.\C:`) using the Windows `CreateFileW` API.
+Accessing the raw data of a hard drive is a sensitive operation. coolSearch is configured with a custom Windows Manifest that requests **Administrator privileges** on startup. This elevation allows the Rust backend to open a raw handle to the physical volume (like `\\.\C:`) using the Windows `CreateFileW` API.
+
+Example of the volume open step:
+
+```rust
+let handle = CreateFileW(
+  L"\\.\C:",
+  GENERIC_READ,
+  FILE_SHARE_READ | FILE_SHARE_WRITE,
+  std::ptr::null_mut(),
+  OPEN_EXISTING,
+  FILE_ATTRIBUTE_NORMAL,
+  std::ptr::null_mut(),
+);
+```
 
 ### 2. MFT Enumeration via USN Journal
-The secret to the app's speed is the **Master File Table (MFT)**. The MFT is a hidden system file that NTFS uses to track every file and folder on a volume. 
+The secret to the app's speed is the **Master File Table (MFT)**. The MFT is a hidden NTFS system file that tracks every file and folder on a volume.
 
-Instead of searching through folders manually, coolSearch uses the Windows `DeviceIoControl` API with the `FSCTL_ENUM_USN_DATA` command. This tells the Windows kernel to stream the metadata of every file directly into our app's memory in massive chunks. This is orders of magnitude faster than traditional folder-walking because it avoids the overhead of opening every individual directory.
+Instead of walking the directory tree one folder at a time, coolSearch uses `DeviceIoControl` with the `FSCTL_ENUM_USN_DATA` control code. This tells Windows to stream raw USN journal records directly into memory.
+
+```rust
+DeviceIoControl(
+  handle,
+  FSCTL_ENUM_USN_DATA,
+  &mft_enum_data,
+  std::mem::size_of::<MFT_ENUM_DATA_V0>() as u32,
+  buffer.as_mut_ptr() as *mut _,
+  buffer.len() as u32,
+  &mut bytes_returned,
+  std::ptr::null_mut(),
+);
+```
+
+This is far faster than traditional folder enumeration because it avoids opening every individual directory and instead processes bulk filesystem metadata.
 
 ### 3. Tree Path Resolution
-The raw data from the MFT doesn't actually store full paths (like `C:\Windows\System32\cmd.exe`). Instead, it stores the file's name and a **Parent Reference ID**. 
+Raw MFT data does not store full file paths like `C:\Windows\System32\cmd.exe`. Instead, it stores each entry's name and a **Parent Reference ID**.
 
-To reconstruct the full path:
-1. **Pass 1 (Ingestion):** coolSearch builds a high-speed in-memory map of every File ID and its associated name.
-2. **Pass 2 (Resolution):** For every file found, the engine "walks up" the parent IDs until it reaches the root of the drive, joining the names together to create the absolute file path.
+coolSearch reconstructs full paths in two passes:
+
+1. **Pass 1 (Ingestion):** build a map of `FileID -> Name` and `FileID -> ParentID`.
+2. **Pass 2 (Resolution):** walk parent IDs upward until the root is reached, then join names into a full path.
+
+```rust
+let mut path_parts = Vec::new();
+let mut current_id = file_id;
+while current_id != root_id {
+  path_parts.push(name_map[&current_id].clone());
+  current_id = parent_map[&current_id];
+}
+path_parts.reverse();
+let full_path = path_parts.join("\\");
+```
 
 ### 4. Fluid Frontend & IPC
-The frontend is a modern **React** application that communicates with the Rust engine via **Tauri**. 
-- **Virtualized Rendering:** To handle results that could contain millions of files, we use **virtualized lists**. This ensures that the browser only renders the few dozen files you see on the screen at any given time, keeping the UI buttery smooth.
-- **Tauri IPC:** Search queries are sent from the search bar to the Rust engine through an asynchronous bridge, allowing the search to happen in a background thread without ever freezing the interface.
+The frontend is a modern **React** application that communicates with the Rust engine through **Tauri**.
+
+- **Virtualized Rendering:** Results use a virtualized list so only visible rows are rendered, making the UI fast even for millions of matches.
+- **Tauri IPC:** Search queries are dispatched with `invoke("search_files", { query })`, and the Rust backend returns results asynchronously.
+
+```ts
+const results = await invoke<FileRecord[]>("search_files", { query });
+```
+
+This design keeps the UI responsive while the backend performs the heavy lifting.
 
 ## Security & Hardening
 
