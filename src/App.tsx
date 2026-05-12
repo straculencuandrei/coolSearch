@@ -33,6 +33,9 @@ function App() {
   const [releaseNotes, setReleaseNotes] = useState<string>("");
   const [showNotes, setShowNotes] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const [sortByExtension, setSortByExtension] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const handleTitleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -91,7 +94,10 @@ The update system is now fully functional! 🚀`;
     setShowNotes(true);
   };
   useEffect(() => {
-    const handleResize = () => setWindowHeight(window.innerHeight);
+    const handleResize = () => {
+      setWindowHeight(window.innerHeight);
+      setWindowWidth(window.innerWidth);
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -183,8 +189,55 @@ The update system is now fully functional! 🚀`;
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getSortedResults = (): FileRecord[] => {
+    if (!sortByExtension) {
+      return results;
+    }
+
+    const grouped: { [key: string]: FileRecord[] } = {};
+    
+    results.forEach(file => {
+      const ext = file.is_dir ? '[FOLDER]' : (file.name.split('.').pop()?.toLowerCase() || '[NO EXT]');
+      if (!grouped[ext]) {
+        grouped[ext] = [];
+      }
+      grouped[ext].push(file);
+    });
+
+    const sortedExtensions = Object.keys(grouped).sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.localeCompare(b);
+      } else {
+        return b.localeCompare(a);
+      }
+    });
+
+    const sorted: FileRecord[] = [];
+    sortedExtensions.forEach(ext => {
+      sorted.push(...grouped[ext]);
+    });
+
+    return sorted;
+  };
+
+  // Responsive calculations
+  const isMobile = windowWidth < 768;
+  const isSmall = windowWidth < 1024;
+  const getResponsiveContainerHeight = () => {
+    // Reserve space for header (120px), search bar, and some padding
+    const headerSpace = selectedFile ? 180 : 150;
+    return Math.max(windowHeight - headerSpace, 300);
+  };
+  const getResponsiveListHeight = () => {
+    const containerHeight = getResponsiveContainerHeight();
+    // Account for sort sidebar if not mobile
+    return Math.max(containerHeight - 40, 200);
+  };
+
+  const sortedResults = getSortedResults();
+
   const Row = ({ index, style }: any) => {
-    const file = results[index];
+    const file = sortedResults[index];
     if (!file) return null;
 
     const getIconColor = () => {
@@ -229,12 +282,12 @@ The update system is now fully functional! 🚀`;
   };
 
   return (
-    <div className={`min-h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-y-auto overflow-x-hidden theme-${currentTheme} ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
+    <div className={`h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-hidden theme-${currentTheme} ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
       {/* Background with subtle matte finish */}
       <div className="absolute inset-0 bg-dark-bg pointer-events-none" />
 
       {/* Header & Status */}
-      <div className="flex flex-col items-end p-6 px-10 z-10 gap-2">
+      <div className="flex flex-col items-end p-4 sm:p-6 px-4 sm:px-10 z-10 gap-2 flex-shrink-0">
         <div className={`text-xs font-mono text-gray-400 bg-dark-surface px-4 py-1.5 rounded-full border border-gray-800 flex items-center gap-2 -translate-x-4 ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}>
           {status.includes("Indexing") ? (
             <span className="relative flex h-2 w-2">
@@ -256,7 +309,7 @@ The update system is now fully functional! 🚀`;
       </div>
 
       {/* Search Container */}
-      <div className="flex flex-col items-center justify-start flex-1 w-full max-w-4xl mx-auto mt-0 px-4 z-10">
+      <div className="flex flex-col items-center justify-start flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 z-10 min-h-0 overflow-y-auto pb-16">
         {!selectedFile && (
           <motion.div
             initial={{ opacity: 0, y: 60 }}
@@ -268,12 +321,12 @@ The update system is now fully functional! 🚀`;
             }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onMouseMove={handleTitleMouseMove}
-            className="flex items-center gap-3 mb-8 relative"
+            className="flex items-center gap-3 mb-6 sm:mb-8 relative"
           >
-            <Wrench size={24} className={`text-gray-400 absolute -left-10 ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`} />
+            <Wrench size={isMobile ? 20 : 24} className={`text-gray-400 absolute -left-8 sm:-left-10 ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`} />
             <h1 
               data-text="coolSearch"
-              className={`chrome-title font-bold text-2xl tracking-[0.1em] uppercase select-none cursor-default ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}
+              className={`chrome-title font-bold text-xl sm:text-2xl md:text-3xl tracking-[0.1em] uppercase select-none cursor-default ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}
               style={{ 
                 '--mouse-x': `${mousePos.x}%`, 
                 '--mouse-y': `${mousePos.y}%` 
@@ -292,7 +345,7 @@ The update system is now fully functional! 🚀`;
                 scale: query || isFocused ? 1 : 1.05
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="w-full relative"
+              className="w-full max-w-2xl relative flex-shrink-0"
             >
               <div className={`
                 relative group flex items-center bg-dark-surface/80 backdrop-blur-md rounded-xl matte-border
@@ -300,7 +353,7 @@ The update system is now fully functional! 🚀`;
                 ${currentTheme.startsWith('neon') ? 'neon-border' : ''}
                 transition-all duration-300 overflow-hidden
               `}>
-                <div className="pl-3 text-gray-400 group-hover:text-white transition-colors">
+                <div className="pl-3 text-gray-400 group-hover:text-white transition-colors flex-shrink-0">
                   <Search size={18} />
                 </div>
                 <input
@@ -310,14 +363,14 @@ The update system is now fully functional! 🚀`;
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                   placeholder="Search for files or folders..."
-                  className="w-full bg-transparent border-none text-sm text-gray-100 placeholder-gray-600 px-3 py-2.5 focus:outline-none focus:ring-0"
+                  className="w-full bg-transparent border-none text-sm text-gray-100 placeholder-gray-600 px-3 py-2.5 focus:outline-none focus:ring-0 min-w-0"
                   spellCheck={false}
                   autoFocus
                 />
                 {query && (
                   <button
                     onClick={() => setQuery('')}
-                    className="pr-6 text-gray-500 hover:text-white transition-colors"
+                    className="pr-6 text-gray-500 hover:text-white transition-colors flex-shrink-0"
                   >
                     Clear
                   </button>
@@ -330,13 +383,13 @@ The update system is now fully functional! 🚀`;
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="w-full -mt-8 relative z-10"
+              className="w-full max-w-2xl -mt-8 relative z-10 flex-shrink-0"
             >
               <button
                 onClick={() => setSelectedFile(null)}
                 className={`flex items-center gap-2 text-gray-400 hover:text-white transition-all bg-dark-surface/50 hover:bg-dark-surface px-5 py-2.5 rounded-xl border border-gray-800 hover:border-white/20 group shadow-lg ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
               >
-                <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform flex-shrink-0" />
                 <span className="text-sm font-medium">Back to results</span>
               </button>
             </motion.div>
@@ -351,64 +404,64 @@ The update system is now fully functional! 🚀`;
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className={`w-full mt-3 max-w-2xl mx-auto bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-5 shadow-2xl flex flex-col md:flex-row min-h-0 flex-1 mb-6 overflow-hidden ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              className={`w-full mt-3 max-w-4xl mx-auto bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-4 sm:p-5 md:p-8 shadow-2xl flex flex-col md:flex-row gap-4 md:gap-0 flex-1 mb-6 overflow-hidden ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
             >
-              <div className="flex-[0.8] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-800/50 pb-6 md:pb-0 md:pr-8">
-                <div className={`mb-6 p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 ${selectedFile.is_dir ? "text-yellow-400" :
+              <div className="flex-[0.8] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-800/50 pb-4 md:pb-0 md:pr-8">
+                <div className={`mb-4 md:mb-6 p-4 md:p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 flex-shrink-0 ${selectedFile.is_dir ? "text-yellow-400" :
                   ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
                     ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500 p-0 overflow-hidden" :
                       "text-gray-400"
                   } ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}>
-                  {selectedFile.is_dir ? <Folder size={64} /> :
-                    ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? <Music size={64} /> :
+                  {selectedFile.is_dir ? <Folder size={isMobile ? 48 : 64} /> :
+                    ['mp3', 'wav', 'flac'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? <Music size={isMobile ? 48 : 64} /> :
                       ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(selectedFile.name.split('.').pop()?.toLowerCase() || '') ? (
                         <img
                           src={convertFileSrc(selectedFile.path)}
                           alt={selectedFile.name}
-                          className="w-48 h-48 object-contain rounded-xl shadow-2xl bg-black/20"
+                          className="w-32 md:w-48 h-32 md:h-48 object-contain rounded-xl shadow-2xl bg-black/20"
                         />
                       ) :
-                        <FileIcon size={64} />
+                        <FileIcon size={isMobile ? 48 : 64} />
                   }
                 </div>
-                <h2 className="text-xl font-light text-center break-all">{selectedFile.name}</h2>
+                <h2 className="text-lg md:text-xl font-light text-center break-all px-2">{selectedFile.name}</h2>
                 <p className="text-gray-500 text-xs mt-2 uppercase tracking-widest">{selectedFile.is_dir ? 'Directory' : 'File'}</p>
               </div>
 
-              <div className="flex-1 pl-8 flex flex-col justify-center gap-6">
+              <div className="flex-1 md:pl-8 flex flex-col justify-center gap-4 md:gap-6 px-0 md:px-4">
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Absolute Path</span>
-                  <p className="text-sm text-gray-300 break-all font-mono bg-dark-bg/30 p-3 rounded-lg border border-gray-800/30">
+                  <p className="text-xs md:text-sm text-gray-300 break-all font-mono bg-dark-bg/30 p-2 md:p-3 rounded-lg border border-gray-800/30">
                     {selectedFile.path}
                   </p>
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex gap-2 mt-2 flex-wrap">
                     <button
                       onClick={copyPath}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors whitespace-nowrap"
                     >
                       {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                       {copied ? 'Copied!' : 'Copy Path'}
                     </button>
                     <button
                       onClick={openExplorer}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors whitespace-nowrap"
                     >
                       <FolderOpen size={14} />
-                      Open in Explorer
+                      Open
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 md:gap-4">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Size</span>
-                    <p className="text-lg font-medium text-gray-200">
+                    <p className="text-base md:text-lg font-medium text-gray-200">
                       {details ? formatSize(details.size) : 'Loading...'}
                     </p>
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Created</span>
-                    <p className="text-sm font-medium text-gray-300">
+                    <p className="text-xs md:text-sm font-medium text-gray-300">
                       {details ? details.created : 'Loading...'}
                     </p>
                   </div>
@@ -422,42 +475,101 @@ The update system is now fully functional! 🚀`;
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className={`w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-6 shadow-2xl flex flex-col ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
-              style={{ maxHeight: 'calc(100vh - 120px)' }}
+              className={`w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-6 shadow-2xl flex flex-col sm:flex-row ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
             >
-              {results.length > 0 ? (
-                <div className="flex-1 overflow-hidden" style={{ position: 'relative' }}>
-                  <List
-                    className="custom-scrollbar w-full"
-                    style={{ height: windowHeight - 120 }}
-                    rowCount={results.length}
-                    rowHeight={38}
-                    rowComponent={Row}
-                    rowProps={{}}
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-48 text-gray-500">
-                  <Terminal size={32} className="mb-2 opacity-50" />
-                  <p>No results found for "{query}"</p>
+              {/* Sort Sidebar - Hidden on mobile, collapsed on small screens */}
+              {!isMobile && (
+                <div className={`${isSmall ? 'w-36' : 'w-48'} bg-dark-bg/40 border-r border-gray-800/50 flex flex-col p-3 sm:p-4 gap-4 flex-shrink-0 overflow-y-auto`}>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold block mb-3">Sort Options</span>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => setSortByExtension(!sortByExtension)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                        sortByExtension
+                          ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                          : 'bg-dark-surface/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                      }`}
+                    >
+                      <Type size={14} />
+                      <span className="hidden md:inline">Group by Extension</span>
+                      <span className="md:hidden">Group by Ext</span>
+                    </button>
+                  </div>
+
+                  {sortByExtension && (
+                    <div className="flex flex-col gap-2 pt-2 border-t border-gray-800/50">
+                      <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Sort Order</span>
+                      <button
+                        onClick={() => setSortOrder('asc')}
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                          sortOrder === 'asc'
+                            ? 'bg-green-500/20 border-green-500/50 text-green-300'
+                            : 'bg-dark-surface/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                        }`}
+                      >
+                        <span>↑ Ascending</span>
+                      </button>
+                      <button
+                        onClick={() => setSortOrder('desc')}
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                          sortOrder === 'desc'
+                            ? 'bg-purple-500/20 border-purple-500/50 text-purple-300'
+                            : 'bg-dark-surface/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                        }`}
+                      >
+                        <span>↓ Descending</span>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-gray-800/50 flex flex-col gap-2">
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Total Results</span>
+                    <div className="bg-dark-surface/50 px-3 py-2.5 rounded-lg text-sm font-mono text-gray-300 text-center">
+                      {sortedResults.length}
+                    </div>
+                  </div>
                 </div>
               )}
+
+              {/* Results List */}
+              <div className="flex-1 overflow-hidden flex flex-col min-w-0">
+                {sortedResults.length > 0 ? (
+                  <div className="overflow-hidden flex-1" style={{ position: 'relative' }}>
+                    <List
+                      className="custom-scrollbar w-full"
+                      style={{ height: getResponsiveListHeight() }}
+                      rowCount={sortedResults.length}
+                      rowHeight={38}
+                      rowComponent={Row}
+                      rowProps={{}}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center flex-1 text-gray-500 py-8">
+                    <Terminal size={32} className="mb-2 opacity-50" />
+                    <p className="text-sm px-2">No results found for "{query}"</p>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
       {/* Footer Controls */}
-      <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-20">
+      <div className="fixed bottom-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-auto">
         <button
           onClick={() => setShowSettings(true)}
-          className="p-2 text-gray-500 hover:text-white transition-colors"
+          className="p-2 text-gray-500 hover:text-white transition-colors hover:bg-dark-surface/50 rounded-lg"
         >
           <Wrench size={18} />
         </button>
         <button
           onClick={() => setShowInfo(true)}
-          className="p-2 text-gray-500 hover:text-white transition-colors"
+          className="p-2 text-gray-500 hover:text-white transition-colors hover:bg-dark-surface/50 rounded-lg"
         >
           <Info size={18} />
         </button>
@@ -476,10 +588,11 @@ The update system is now fully functional! 🚀`;
               onClick={async () => {
                 await updateAvailable.downloadAndInstall();
               }}
-              className={`flex items-center gap-2 bg-gray-200 text-dark-bg font-bold px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              className={`flex items-center gap-2 bg-gray-200 text-dark-bg font-bold px-4 sm:px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all text-xs sm:text-sm uppercase tracking-wider ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
             >
               <Download size={18} />
-              Update to {updateAvailable.version}
+              <span className="hidden sm:inline">Update to {updateAvailable.version}</span>
+              <span className="sm:hidden">Update</span>
             </button>
           </motion.div>
         )}
@@ -499,15 +612,15 @@ The update system is now fully functional! 🚀`;
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className={`bg-dark-surface border border-gray-800 p-8 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              className={`bg-dark-surface border border-gray-800 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <Sparkles className="text-gray-400" size={24} />
-                  <h2 className="text-xl font-bold tracking-tight">Latest Release Changes</h2>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Sparkles className="text-gray-400 flex-shrink-0" size={24} />
+                  <h2 className="text-lg sm:text-xl font-bold tracking-tight truncate">Latest Release Changes</h2>
                 </div>
-                <button onClick={() => setShowNotes(false)} className="text-gray-500 hover:text-white transition-colors">
+                <button onClick={() => setShowNotes(false)} className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
                   <X size={20} />
                 </button>
               </div>
@@ -533,20 +646,20 @@ The update system is now fully functional! 🚀`;
               initial={{ scale: 0.9, opacity: 0, x: -20 }}
               animate={{ scale: 1, opacity: 1, x: 0 }}
               exit={{ scale: 0.9, opacity: 0, x: -20 }}
-              className={`bg-dark-surface border border-gray-800 p-8 rounded-3xl shadow-2xl max-w-md w-full flex flex-col gap-6 ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              className={`bg-dark-surface border border-gray-800 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-md w-full flex flex-col gap-6 ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Wrench className="text-gray-400" size={20} />
-                  <h2 className="text-lg font-bold">App Settings</h2>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Wrench className="text-gray-400 flex-shrink-0" size={20} />
+                  <h2 className="text-lg font-bold truncate">App Settings</h2>
                 </div>
-                <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-white transition-colors">
+                <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-6 overflow-y-auto max-h-[70vh]">
                 <div>
                   <span className="text-gray-500 block mb-3 text-[11px] uppercase tracking-widest font-bold">Theme</span>
                   <div className="grid grid-cols-5 gap-2">
@@ -601,7 +714,7 @@ The update system is now fully functional! 🚀`;
                     }}
                     className="flex items-center gap-3 w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all group"
                   >
-                    <Terminal size={18} />
+                    <Terminal size={18} className="flex-shrink-0" />
                     <div className="text-left">
                       <div className="text-xs font-bold uppercase">Force Re-index</div>
                       <div className="text-[10px] opacity-70">Deep scan MFT records immediately</div>
@@ -628,14 +741,14 @@ The update system is now fully functional! 🚀`;
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className={`bg-dark-surface border border-gray-800 p-10 rounded-3xl shadow-2xl max-w-xl w-full flex items-center ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              className={`bg-dark-surface border border-gray-800 p-6 sm:p-10 rounded-3xl shadow-2xl max-w-xl w-full flex flex-col sm:flex-row items-center gap-6 sm:gap-0 ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex-1 text-center border-r border-gray-800/50 pr-10">
+              <div className="flex-1 text-center sm:border-r border-gray-800/50 sm:pr-10">
                 <h2 
                   data-text="coolSearch"
                   onMouseMove={handleTitleMouseMove}
-                  className="chrome-title text-4xl font-bold tracking-tighter select-none cursor-default"
+                  className="chrome-title text-3xl sm:text-4xl font-bold tracking-tighter select-none cursor-default"
                   style={{ 
                     '--mouse-x': `${mousePos.x}%`, 
                     '--mouse-y': `${mousePos.y}%` 
@@ -644,7 +757,7 @@ The update system is now fully functional! 🚀`;
                   coolSearch
                 </h2>
               </div>
-              <div className="flex-1 pl-10 flex flex-col gap-4 text-sm">
+              <div className="flex-1 sm:pl-10 flex flex-col gap-4 text-sm">
                 <div>
                   <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Credits</span>
                   <span className="text-gray-200 font-medium text-base">straculencuandrei</span>
@@ -657,7 +770,7 @@ The update system is now fully functional! 🚀`;
                   onClick={() => {
                     invoke("open_url", { url: "https://github.com/straculencuandrei/coolSearch" });
                   }}
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mt-2 font-medium bg-transparent border-none p-0"
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mt-2 font-medium bg-transparent border-none p-0 justify-center sm:justify-start"
                 >
                   <ExternalLink size={18} />
                   GitHub Repository

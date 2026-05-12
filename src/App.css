@@ -218,3 +218,45 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-500;
 }
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  body {
+    overflow: hidden;
+  }
+}
+
+/* Ensure smooth scrolling and proper layout */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(55, 65, 81) transparent;
+}
+
+/* Responsive text sizing */
+@media (max-width: 768px) {
+  .text-2xl {
+    font-size: 1.5rem;
+  }
+
+  .text-xl {
+    font-size: 1.25rem;
+  }
+}
+
+/* Prevent overflow on small screens */
+@media (max-width: 640px) {
+  html, body {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* Ensure flex containers don't shrink below content */
+.min-w-0 {
+  min-width: 0;
+}
