@@ -99,201 +99,207 @@ pub fn start_indexing(cache_path: Option<PathBuf>) {
         return;
     }
     state.is_indexing = true;
-    state.stats = "Scanning MFT on C:\\...".to_string();
+    state.stats = "Scanning MFT on all drives...".to_string();
     drop(state);
 
     thread::spawn(|| {
         let start_time = Instant::now();
-        let mut raw_records = HashMap::new();
-        let mut error_msg = String::new();
+        let mut all_records = Vec::new();
+        let mut error_messages = Vec::new();
+        let drives = get_logical_drives();
 
-        let drive_path = HSTRING::from("\\\\.\\C:");
-        let handle_result = unsafe {
-            CreateFileW(
-                &drive_path,
-                GENERIC_READ.0,
-                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                None,
-                OPEN_EXISTING,
-                FILE_FLAG_BACKUP_SEMANTICS,
-                None,
-            )
-        };
+        for drive_letter in drives {
+            let mut raw_records = HashMap::new();
 
-        if let Ok(handle) = handle_result {
-            let mut mft_data = MFT_ENUM_DATA_V0 {
-                StartFileReferenceNumber: 0,
-                LowUsn: 0,
-                HighUsn: i64::MAX,
+            let drive_path = HSTRING::from(format!("\\\\.\\{}:", drive_letter));
+            let handle_result = unsafe {
+                CreateFileW(
+                    &drive_path,
+                    GENERIC_READ.0,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    None,
+                    OPEN_EXISTING,
+                    FILE_FLAG_BACKUP_SEMANTICS,
+                    None,
+                )
             };
 
-            let mut buffer = vec![0u8; 64 * 1024];
-            let mut bytes_returned = 0u32;
-
-            loop {
-                let result = unsafe {
-                    DeviceIoControl(
-                        handle,
-                        FSCTL_ENUM_USN_DATA,
-                        Some(&mut mft_data as *mut _ as *mut c_void),
-                        size_of::<MFT_ENUM_DATA_V0>() as u32,
-                        Some(buffer.as_mut_ptr() as *mut c_void),
-                        buffer.len() as u32,
-                        Some(&mut bytes_returned),
-                        None,
-                    )
+            if let Ok(handle) = handle_result {
+                let mut mft_data = MFT_ENUM_DATA_V0 {
+                    StartFileReferenceNumber: 0,
+                    LowUsn: 0,
+                    HighUsn: i64::MAX,
                 };
 
-                if result.is_err() || bytes_returned < 8 {
-                    break;
-                }
+                let mut buffer = vec![0u8; 64 * 1024];
+                let mut bytes_returned = 0u32;
 
-                let next_id = unsafe { *(buffer.as_ptr() as *const u64) };
+                loop {
+                    let result = unsafe {
+                        DeviceIoControl(
+                            handle,
+                            FSCTL_ENUM_USN_DATA,
+                            Some(&mut mft_data as *mut _ as *mut c_void),
+                            size_of::<MFT_ENUM_DATA_V0>() as u32,
+                            Some(buffer.as_mut_ptr() as *mut c_void),
+                            buffer.len() as u32,
+                            Some(&mut bytes_returned),
+                            None,
+                        )
+                    };
 
-                let mut offset = 8;
-                while offset + 8 <= bytes_returned {
-                    let record_ptr = unsafe { buffer.as_ptr().offset(offset as isize) };
-
-                    let record_len = unsafe { *(record_ptr as *const u32) };
-                    if record_len == 0 || offset + record_len > bytes_returned {
+                    if result.is_err() || bytes_returned < 8 {
                         break;
                     }
 
-                    let major_version = unsafe { *(record_ptr.offset(4) as *const u16) };
+                    let next_id = unsafe { *(buffer.as_ptr() as *const u64) };
 
-                    if major_version == 2 {
-                        if record_len < size_of::<USN_RECORD_V2>() as u32 {
-                            break;
-                        }
-                        let record = unsafe { &*(record_ptr as *const USN_RECORD_V2) };
-                        if (record.FileNameOffset as u32 + record.FileNameLength as u32)
-                            > record_len
-                        {
-                            break;
-                        }
+                    let mut offset = 8;
+                    while offset + 8 <= bytes_returned {
+                        let record_ptr = unsafe { buffer.as_ptr().offset(offset as isize) };
 
-                        let filename_ptr = unsafe {
-                            record_ptr.offset(record.FileNameOffset as isize) as *const u16
-                        };
-                        let filename_len_u16 = (record.FileNameLength / 2) as usize;
-                        let filename_slice =
-                            unsafe { std::slice::from_raw_parts(filename_ptr, filename_len_u16) };
-                        let filename = OsString::from_wide(filename_slice)
-                            .to_string_lossy()
-                            .into_owned();
-
-                        let is_dir = (record.FileAttributes & FILE_ATTRIBUTE_DIRECTORY.0) != 0;
-
-                        raw_records.insert(
-                            record.FileReferenceNumber,
-                            RawRecord {
-                                id: record.FileReferenceNumber,
-                                parent_id: record.ParentFileReferenceNumber,
-                                name: filename,
-                                is_dir,
-                            },
-                        );
-                    } else if major_version == 3 {
-                        if record_len < size_of::<USN_RECORD_V3>() as u32 {
-                            break;
-                        }
-                        let record = unsafe { &*(record_ptr as *const USN_RECORD_V3) };
-                        if (record.FileNameOffset as u32 + record.FileNameLength as u32)
-                            > record_len
-                        {
+                        let record_len = unsafe { *(record_ptr as *const u32) };
+                        if record_len == 0 || offset + record_len > bytes_returned {
                             break;
                         }
 
-                        let filename_ptr = unsafe {
-                            record_ptr.offset(record.FileNameOffset as isize) as *const u16
-                        };
-                        let filename_len_u16 = (record.FileNameLength / 2) as usize;
-                        let filename_slice =
-                            unsafe { std::slice::from_raw_parts(filename_ptr, filename_len_u16) };
-                        let filename = OsString::from_wide(filename_slice)
-                            .to_string_lossy()
-                            .into_owned();
+                        let major_version = unsafe { *(record_ptr.offset(4) as *const u16) };
 
-                        let is_dir = (record.FileAttributes & FILE_ATTRIBUTE_DIRECTORY.0) != 0;
+                        if major_version == 2 {
+                            if record_len < size_of::<USN_RECORD_V2>() as u32 {
+                                break;
+                            }
+                            let record = unsafe { &*(record_ptr as *const USN_RECORD_V2) };
+                            if (record.FileNameOffset as u32 + record.FileNameLength as u32)
+                                > record_len
+                            {
+                                break;
+                            }
 
-                        let mut id_arr = [0u8; 8];
-                        id_arr.copy_from_slice(&record.FileReferenceNumber.Identifier[0..8]);
-                        let id = u64::from_ne_bytes(id_arr);
+                            let filename_ptr = unsafe {
+                                record_ptr.offset(record.FileNameOffset as isize) as *const u16
+                            };
+                            let filename_len_u16 = (record.FileNameLength / 2) as usize;
+                            let filename_slice = unsafe {
+                                std::slice::from_raw_parts(filename_ptr, filename_len_u16)
+                            };
+                            let filename = OsString::from_wide(filename_slice)
+                                .to_string_lossy()
+                                .into_owned();
 
-                        let mut parent_arr = [0u8; 8];
-                        parent_arr
-                            .copy_from_slice(&record.ParentFileReferenceNumber.Identifier[0..8]);
-                        let parent_id = u64::from_ne_bytes(parent_arr);
+                            let is_dir = (record.FileAttributes & FILE_ATTRIBUTE_DIRECTORY.0) != 0;
 
-                        raw_records.insert(
-                            id,
-                            RawRecord {
+                            raw_records.insert(
+                                record.FileReferenceNumber,
+                                RawRecord {
+                                    id: record.FileReferenceNumber,
+                                    parent_id: record.ParentFileReferenceNumber,
+                                    name: filename,
+                                    is_dir,
+                                },
+                            );
+                        } else if major_version == 3 {
+                            if record_len < size_of::<USN_RECORD_V3>() as u32 {
+                                break;
+                            }
+                            let record = unsafe { &*(record_ptr as *const USN_RECORD_V3) };
+                            if (record.FileNameOffset as u32 + record.FileNameLength as u32)
+                                > record_len
+                            {
+                                break;
+                            }
+
+                            let filename_ptr = unsafe {
+                                record_ptr.offset(record.FileNameOffset as isize) as *const u16
+                            };
+                            let filename_len_u16 = (record.FileNameLength / 2) as usize;
+                            let filename_slice = unsafe {
+                                std::slice::from_raw_parts(filename_ptr, filename_len_u16)
+                            };
+                            let filename = OsString::from_wide(filename_slice)
+                                .to_string_lossy()
+                                .into_owned();
+
+                            let is_dir = (record.FileAttributes & FILE_ATTRIBUTE_DIRECTORY.0) != 0;
+
+                            let mut id_arr = [0u8; 8];
+                            id_arr.copy_from_slice(&record.FileReferenceNumber.Identifier[0..8]);
+                            let id = u64::from_ne_bytes(id_arr);
+
+                            let mut parent_arr = [0u8; 8];
+                            parent_arr.copy_from_slice(
+                                &record.ParentFileReferenceNumber.Identifier[0..8],
+                            );
+                            let parent_id = u64::from_ne_bytes(parent_arr);
+
+                            raw_records.insert(
                                 id,
-                                parent_id,
-                                name: filename,
-                                is_dir,
-                            },
-                        );
+                                RawRecord {
+                                    id,
+                                    parent_id,
+                                    name: filename,
+                                    is_dir,
+                                },
+                            );
+                        }
+
+                        offset += record_len;
                     }
 
-                    offset += record_len;
+                    mft_data.StartFileReferenceNumber = next_id;
                 }
 
-                mft_data.StartFileReferenceNumber = next_id;
-            }
-
-            unsafe {
-                let _ = CloseHandle(handle);
-            }
-        } else {
-            error_msg = format!(
-                "Failed to open C: (Code: {:?})",
-                handle_result.err().unwrap()
-            );
-        }
-
-        let mut final_records = Vec::with_capacity(raw_records.len());
-
-        if error_msg.is_empty() {
-            for (_, record) in &raw_records {
-                let mut path_parts = Vec::new();
-                path_parts.push(record.name.clone());
-
-                let mut current_parent = record.parent_id;
-                let mut depth = 0;
-                while let Some(parent_record) = raw_records.get(&current_parent) {
-                    if depth > 30 {
-                        break;
-                    }
-                    path_parts.push(parent_record.name.clone());
-                    if parent_record.parent_id == current_parent {
-                        break;
-                    }
-                    current_parent = parent_record.parent_id;
-                    depth += 1;
+                unsafe {
+                    let _ = CloseHandle(handle);
                 }
 
-                path_parts.push("C:".to_string());
-                path_parts.reverse();
-                let full_path = path_parts.join("\\");
+                // Process records for this drive
+                for (_, record) in &raw_records {
+                    let mut path_parts = Vec::new();
+                    path_parts.push(record.name.clone());
 
-                final_records.push(FileRecord {
-                    id: record.id,
-                    parent_id: record.parent_id,
-                    name: record.name.clone(),
-                    path: full_path,
-                    is_dir: record.is_dir,
-                });
+                    let mut current_parent = record.parent_id;
+                    let mut depth = 0;
+                    while let Some(parent_record) = raw_records.get(&current_parent) {
+                        if depth > 30 {
+                            break;
+                        }
+                        path_parts.push(parent_record.name.clone());
+                        if parent_record.parent_id == current_parent {
+                            break;
+                        }
+                        current_parent = parent_record.parent_id;
+                        depth += 1;
+                    }
+
+                    path_parts.push(format!("{}:", drive_letter));
+                    path_parts.reverse();
+                    let full_path = path_parts.join("\\");
+
+                    all_records.push(FileRecord {
+                        id: record.id,
+                        parent_id: record.parent_id,
+                        name: record.name.clone(),
+                        path: full_path,
+                        is_dir: record.is_dir,
+                    });
+                }
+            } else {
+                error_messages.push(format!(
+                    "Failed to open {}: (Code: {:?})",
+                    drive_letter,
+                    handle_result.err().unwrap()
+                ));
             }
         }
 
         let duration = start_time.elapsed();
         let mut state = GLOBAL_INDEX.write();
-        state.records = final_records;
+        state.records = all_records;
         state.is_indexing = false;
 
-        if !error_msg.is_empty() {
-            state.stats = format!("Error: {}", error_msg);
+        if !error_messages.is_empty() {
+            state.stats = format!("Warnings: {}. Indexed {} files in {:?}", error_messages.join("; "), state.records.len(), duration);
         } else {
             state.stats = format!("Indexed {} files in {:?}", state.records.len(), duration);
             if let Some(path) = cache_path {
@@ -303,7 +309,6 @@ pub fn start_indexing(cache_path: Option<PathBuf>) {
     });
 }
 
-#[allow(dead_code)]
 fn get_logical_drives() -> Vec<char> {
     let mut drives = Vec::new();
     let bitmask = unsafe { GetLogicalDrives() };
