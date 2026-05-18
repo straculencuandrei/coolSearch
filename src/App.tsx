@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench, Sparkles, Download, X, Clock, Minus, Square } from "lucide-react";
+import { Search, File as FileIcon, Folder, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench, Sparkles, Download, X, Clock } from "lucide-react";
 import { check } from "@tauri-apps/plugin-updater";
 import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -334,51 +334,48 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
     );
   };
 
-  const hoverBgClass = currentTheme === 'light' ? 'hover:bg-gray-200 active:bg-gray-300' : 'hover:bg-white/10 active:bg-white/5';
-  const hoverTextClass = currentTheme === 'light' ? 'hover:text-black' : 'hover:text-white';
   const titleTextClass = currentTheme === 'light' ? 'text-gray-800 font-semibold' : 'font-semibold text-gray-200';
-  const btnTextClass = currentTheme === 'light' ? 'text-gray-600' : 'text-gray-500';
 
   return (
     <div className={`h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-hidden theme-${currentTheme} ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
       {/* Custom Title Bar */}
       <div 
         data-tauri-drag-region 
-        className={`h-10 bg-dark-surface/50 border-b ${currentTheme === 'light' ? 'border-gray-300' : 'border-gray-800/30'} flex items-center justify-between px-4 select-none z-50 flex-shrink-0 ${currentTheme.startsWith('neon') ? 'neon-border border-b' : ''}`}
+        className={`h-10 bg-dark-surface/50 border-b ${currentTheme === 'light' ? 'border-gray-300' : 'border-gray-800/30'} flex items-center justify-between px-4 select-none z-50 flex-shrink-0 relative ${currentTheme.startsWith('neon') ? 'neon-border border-b' : ''}`}
       >
-        {/* Left side: App Icon & Name */}
-        <div data-tauri-drag-region className="flex items-center gap-2 text-xs font-mono text-gray-400">
-          <Search size={14} className={currentTheme.startsWith('neon') ? 'neon-text' : currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'} />
-          <span data-tauri-drag-region className={titleTextClass}>coolSearch</span>
-        </div>
-
-        {/* Center: Draggable Spacer */}
-        <div data-tauri-drag-region className="flex-1 h-full" />
-
-        {/* Right side: Control Buttons */}
-        <div className="flex items-center h-full">
+        {/* Left side: Mac Traffic Lights */}
+        <div className="flex items-center gap-2.5 z-10">
+          <button 
+            onClick={() => appWindow.close()}
+            className="w-3.5 h-3.5 rounded-full bg-[#ff5f56] border border-[#e0443e] active:bg-[#bf3b36] transition-colors relative group flex items-center justify-center cursor-default"
+            title="Close"
+          >
+            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#4c0002] font-black select-none pointer-events-none transition-opacity absolute leading-none">✕</span>
+          </button>
           <button 
             onClick={() => appWindow.minimize()}
-            className={`w-11 h-full flex items-center justify-center ${btnTextClass} ${hoverTextClass} ${hoverBgClass} transition-colors cursor-default`}
+            className="w-3.5 h-3.5 rounded-full bg-[#ffbd2e] border border-[#dfa224] active:bg-[#c08a1c] transition-colors relative group flex items-center justify-center cursor-default"
             title="Minimize"
           >
-            <Minus size={14} />
+            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#5c3e00] font-black select-none pointer-events-none transition-opacity absolute leading-none">─</span>
           </button>
           <button 
             onClick={() => appWindow.toggleMaximize()}
-            className={`w-11 h-full flex items-center justify-center ${btnTextClass} ${hoverTextClass} ${hoverBgClass} transition-colors cursor-default`}
+            className="w-3.5 h-3.5 rounded-full bg-[#27c93f] border border-[#1a9c31] active:bg-[#127d24] transition-colors relative group flex items-center justify-center cursor-default"
             title="Maximize"
           >
-            <Square size={12} />
-          </button>
-          <button 
-            onClick={() => appWindow.close()}
-            className={`w-11 h-full flex items-center justify-center ${btnTextClass} hover:text-white hover:bg-red-600 active:bg-red-700 transition-colors cursor-default`}
-            title="Close"
-          >
-            <X size={14} />
+            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#004d02] font-black select-none pointer-events-none transition-opacity absolute leading-none">＋</span>
           </button>
         </div>
+
+        {/* Center: App Icon & Name */}
+        <div data-tauri-drag-region className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 text-xs font-mono text-gray-400 select-none">
+          <Search size={13} className={currentTheme.startsWith('neon') ? 'neon-text' : currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'} />
+          <span data-tauri-drag-region className={titleTextClass}>coolSearch</span>
+        </div>
+
+        {/* Right side: Transparent spacer to balance layout */}
+        <div className="w-16 h-full pointer-events-none" />
       </div>
 
       {/* Main Body (Sidebar + Content Area) */}
