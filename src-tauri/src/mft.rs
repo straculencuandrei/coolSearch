@@ -330,6 +330,7 @@ pub fn search(query: &str) -> Vec<FileRecord> {
         .records
         .iter()
         .filter(|r| r.name.to_lowercase().contains(&q))
+        .take(30000) // Safety cap of 30,000 results to prevent Tauri IPC / React bridge crash
         .cloned()
         .collect()
 }

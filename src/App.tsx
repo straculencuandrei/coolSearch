@@ -171,7 +171,7 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (query.trim() === "") {
+      if (query.trim().length < 2) {
         setResults([]);
         return;
       }
@@ -183,8 +183,9 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
       }
     };
 
-    // Add a small debounce
-    const timeout = setTimeout(fetchResults, 100);
+    // Add a dynamic debounce: 400ms for short queries, 150ms for typing full words
+    const debounceTime = query.trim().length < 3 ? 400 : 150;
+    const timeout = setTimeout(fetchResults, debounceTime);
     return () => clearTimeout(timeout);
   }, [query]);
 
