@@ -45,7 +45,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk0REFFODkxOTcxNkQ2RgpSV1J2YlhFWmlhNU5DZmVXVG5mRjdvQzFoYU1FVEdGVDZzTkR4Z3d3a2MwSExpUEJMZ3ZUZFRYRwo=",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdFMDQxRjU4MTNBODIyRUUKUldUdUlxZ1RXQjhFZml5bW1NRjR1blFlbFhobG1jMlVBQiszREZtU3ZaWm56YUgvVkpkYWgzaS8K",
       "endpoints": [
         "https://github.com/straculencuandrei/coolSearch/releases/latest/download/latest.json"
       ]
