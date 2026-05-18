@@ -261,3 +261,16 @@
 .min-w-0 {
   min-width: 0;
 }
+
+/* Sidebar styling for file history */
+.sidebar-file-item {
+  @apply transition-all duration-200;
+}
+
+.sidebar-file-item:hover {
+  @apply bg-dark-bg/50;
+}
+
+.sidebar-file-item.active {
+  @apply bg-blue-500/20 border-l-2 border-blue-500;
+}

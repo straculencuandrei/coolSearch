@@ -37,7 +37,6 @@ function App() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [fileHistory, setFileHistory] = useState<FileRecord[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
 
   const handleTitleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -308,9 +307,59 @@ The update system is now fully functional! 🚀`;
   };
 
   return (
-    <div className={`h-screen bg-dark-bg text-gray-100 flex flex-col relative overflow-hidden theme-${currentTheme} ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
+    <div className={`h-screen bg-dark-bg text-gray-100 flex flex-row relative overflow-hidden theme-${currentTheme} ${currentFont === 'sfpro' ? 'font-sfpro' : 'font-jetbrains'}`}>
       {/* Background with subtle matte finish */}
       <div className="absolute inset-0 bg-dark-bg pointer-events-none" />
+
+      {/* Sidebar - File History */}
+      <div className="w-64 bg-dark-surface/30 border-r border-gray-800/50 flex flex-col overflow-hidden flex-shrink-0">
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-800/50 flex-shrink-0">
+          <h2 className="text-sm font-bold text-gray-200 uppercase tracking-widest flex items-center gap-2">
+            <Clock size={16} className="text-gray-500" />
+            Recent Files
+          </h2>
+        </div>
+
+        {/* History List */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          {fileHistory.length > 0 ? (
+            <div className="divide-y divide-gray-800/50 p-2">
+              {fileHistory.map((file, index) => (
+                <button
+                  key={`${file.path}-${index}`}
+                  onClick={() => handleFileClick(file)}
+                  className={`w-full text-left px-3 py-3 rounded-lg hover:bg-dark-bg/50 transition-colors group mb-1 flex items-center gap-2 min-w-0 ${currentTheme.startsWith('neon') ? 'hover:neon-border' : ''}`}
+                >
+                  <div className={`flex-shrink-0 ${file.is_dir ? "text-yellow-400" :
+                    ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
+                      ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
+                        "text-gray-400"
+                    } ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
+                    {file.is_dir ? <Folder size={16} /> :
+                      ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <Music size={16} /> :
+                        ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={16} /> :
+                          <FileIcon size={16} />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-gray-200 truncate font-medium">{file.name}</div>
+                    <div className="text-[10px] text-gray-500 truncate">{file.path}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
+              <Clock size={24} className="mb-2 opacity-50" />
+              <p className="text-xs text-center">No files viewed yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
 
       {/* Header & Status */}
       <div className="flex flex-col items-end p-4 sm:p-6 px-4 sm:px-10 z-10 gap-2 flex-shrink-0">
@@ -584,114 +633,10 @@ The update system is now fully functional! 🚀`;
           )}
         </AnimatePresence>
       </div>
+      </div>
 
-      {/* File History Section */}
-      <AnimatePresence>
-        {fileHistory.length > 0 && !selectedFile && query === "" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="flex flex-col items-center justify-center gap-3 px-4 mb-20"
-          >
-            <div className="flex items-center gap-2">
-              <Clock size={14} className="text-gray-500" />
-              <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Latest Viewed</span>
-            </div>
-            <button
-              onClick={() => handleFileClick(fileHistory[0])}
-              className={`flex items-center gap-3 px-6 py-4 bg-dark-surface/50 hover:bg-dark-surface backdrop-blur-xl border border-gray-800 hover:border-gray-700 rounded-xl transition-all w-full max-w-md group ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
-            >
-              <div className={`flex-shrink-0 ${fileHistory[0].is_dir ? "text-yellow-400" :
-                ['mp3', 'wav', 'flac'].includes(fileHistory[0].name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
-                  ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(fileHistory[0].name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
-                    "text-gray-400"
-                } ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
-                {fileHistory[0].is_dir ? <Folder size={20} /> :
-                  ['mp3', 'wav', 'flac'].includes(fileHistory[0].name.split('.').pop()?.toLowerCase() || '') ? <Music size={20} /> :
-                    ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(fileHistory[0].name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={20} /> :
-                      <FileIcon size={20} />
-                }
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm font-medium text-gray-100 truncate">{fileHistory[0].name}</div>
-                <div className="text-xs text-gray-500 truncate">{fileHistory[0].path}</div>
-              </div>
-              <ArrowLeft size={18} className="flex-shrink-0 group-hover:translate-x-1 transition-transform rotate-180" />
-            </button>
-            {fileHistory.length > 1 && (
-              <button
-                onClick={() => setShowHistory(true)}
-                className="text-xs text-gray-400 hover:text-gray-200 transition-colors underline"
-              >
-                View all {fileHistory.length} recent files
-              </button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* File History Modal */}
-      <AnimatePresence>
-        {showHistory && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
-            onClick={() => setShowHistory(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className={`bg-dark-surface border border-gray-800 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-lg sm:text-xl font-bold tracking-tight">Recent Files</span>
-                </div>
-                <button onClick={() => setShowHistory(false)} className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
-                {fileHistory.map((file, index) => (
-                  <button
-                    key={`${file.path}-${index}`}
-                    onClick={() => {
-                      handleFileClick(file);
-                      setShowHistory(false);
-                    }}
-                    className={`flex items-center gap-3 w-full px-4 py-3 bg-dark-bg/50 hover:bg-dark-surface/50 border border-gray-800/50 hover:border-gray-700 rounded-lg transition-all group text-left ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
-                  >
-                    <div className={`flex-shrink-0 ${file.is_dir ? "text-yellow-400" :
-                      ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
-                        ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
-                          "text-gray-400"
-                      } ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
-                      {file.is_dir ? <Folder size={18} /> :
-                        ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <Music size={18} /> :
-                          ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={18} /> :
-                            <FileIcon size={18} />
-                      }
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-100 truncate">{file.name}</div>
-                      <div className="text-xs text-gray-500 truncate">{file.path}</div>
-                    </div>
-                    <span className="text-xs text-gray-600 flex-shrink-0">#{index + 1}</span>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Footer Controls */}
-      <div className="fixed bottom-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-auto">
+      {/* Update Button */}
+      <div className="fixed bottom-4 right-4 flex gap-2 z-40 pointer-events-auto">
         <button
           onClick={() => setShowSettings(true)}
           className="p-2 text-gray-500 hover:text-white transition-colors hover:bg-dark-surface/50 rounded-lg"
