@@ -492,7 +492,7 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
       </div>
 
       {/* Search Container */}
-      <div className="flex flex-col items-center justify-start flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 z-10 min-h-0 overflow-y-auto pb-16">
+      <div className="flex flex-col items-center justify-start flex-1 w-full max-w-6xl mx-auto px-6 sm:px-12 md:px-16 z-10 min-h-0 overflow-y-auto pb-16">
         {!selectedFile && (
           <motion.div
             initial={{ opacity: 0, y: 60 }}
