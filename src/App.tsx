@@ -7,6 +7,7 @@ import { check } from "@tauri-apps/plugin-updater";
 import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./App.css";
+import iconNeco from "./icon-neco.png";
 
 const CURRENT_VERSION = "0.1.98";
 
@@ -384,7 +385,7 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
       >
         {/* Left side: App Icon & Name */}
         <div data-tauri-drag-region className="flex items-center gap-2 text-xs font-mono text-gray-400 select-none z-10">
-          <Search size={13} className={currentTheme.startsWith('neon') ? 'neon-text' : currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'} />
+          <img src={iconNeco} alt="Neco Logo" className="w-4 h-4 object-contain select-none pointer-events-none" />
           <span data-tauri-drag-region className={titleTextClass}>coolSearch</span>
         </div>
 
