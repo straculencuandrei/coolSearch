@@ -12,12 +12,14 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "coolSearch",
         "width": 1031,
         "height": 531,
         "minWidth": 600,
         "minHeight": 500,
-        "center": true
+        "center": true,
+        "decorations": false
       }
     ],
     "security": {
