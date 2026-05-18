@@ -383,7 +383,7 @@ The update system is now fully functional! 🚀`;
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="w-full max-w-2xl -mt-8 relative z-10 flex-shrink-0"
+              className="w-full max-w-2xl relative z-10 flex-shrink-0 flex items-center justify-center"
             >
               <button
                 onClick={() => setSelectedFile(null)}
