@@ -37,6 +37,7 @@ function App() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [fileHistory, setFileHistory] = useState<FileRecord[]>([]);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   const handleTitleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -312,51 +313,75 @@ The update system is now fully functional! 🚀`;
       <div className="absolute inset-0 bg-dark-bg pointer-events-none" />
 
       {/* Sidebar - File History */}
-      <div className="w-64 bg-dark-surface/30 border-r border-gray-800/50 flex flex-col overflow-hidden flex-shrink-0">
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-800/50 flex-shrink-0">
-          <h2 className="text-sm font-bold text-gray-200 uppercase tracking-widest flex items-center gap-2">
-            <Clock size={16} className="text-gray-500" />
-            Recent Files
-          </h2>
-        </div>
+      {showSidebar && (
+        <motion.div
+          initial={{ x: -256, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -256, opacity: 0 }}
+          className="w-64 bg-dark-surface/30 border-r border-gray-800/50 flex flex-col overflow-hidden flex-shrink-0 z-30"
+        >
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-gray-800/50 flex-shrink-0 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-gray-200 uppercase tracking-widest flex items-center gap-2 flex-1">
+              <Clock size={16} className="text-gray-500" />
+              Recent Files
+            </h2>
+            <button
+              onClick={() => setShowSidebar(false)}
+              className="p-1 text-gray-500 hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-        {/* History List */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {fileHistory.length > 0 ? (
-            <div className="divide-y divide-gray-800/50 p-2">
-              {fileHistory.map((file, index) => (
-                <button
-                  key={`${file.path}-${index}`}
-                  onClick={() => handleFileClick(file)}
-                  className={`w-full text-left px-3 py-3 rounded-lg hover:bg-dark-bg/50 transition-colors group mb-1 flex items-center gap-2 min-w-0 ${currentTheme.startsWith('neon') ? 'hover:neon-border' : ''}`}
-                >
-                  <div className={`flex-shrink-0 ${file.is_dir ? "text-yellow-400" :
-                    ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
-                      ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
-                        "text-gray-400"
-                    } ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
-                    {file.is_dir ? <Folder size={16} /> :
-                      ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <Music size={16} /> :
-                        ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={16} /> :
-                          <FileIcon size={16} />
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-gray-200 truncate font-medium">{file.name}</div>
-                    <div className="text-[10px] text-gray-500 truncate">{file.path}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
-              <Clock size={24} className="mb-2 opacity-50" />
-              <p className="text-xs text-center">No files viewed yet</p>
-            </div>
-          )}
-        </div>
-      </div>
+          {/* History List */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {fileHistory.length > 0 ? (
+              <div className="divide-y divide-gray-800/50 p-2">
+                {fileHistory.map((file, index) => (
+                  <button
+                    key={`${file.path}-${index}`}
+                    onClick={() => handleFileClick(file)}
+                    className={`w-full text-left px-3 py-3 rounded-lg hover:bg-dark-bg/50 transition-colors group mb-1 flex items-center gap-2 min-w-0 ${currentTheme.startsWith('neon') ? 'hover:neon-border' : ''}`}
+                  >
+                    <div className={`flex-shrink-0 ${file.is_dir ? "text-yellow-400" :
+                      ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
+                        ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
+                          "text-gray-400"
+                      } ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
+                      {file.is_dir ? <Folder size={16} /> :
+                        ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <Music size={16} /> :
+                          ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={16} /> :
+                            <FileIcon size={16} />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-200 truncate font-medium">{file.name}</div>
+                      <div className="text-[10px] text-gray-500 truncate">{file.path}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
+                <Clock size={24} className="mb-2 opacity-50" />
+                <p className="text-xs text-center">No files viewed yet</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Toggle Sidebar Button */}
+      {!showSidebar && (
+        <button
+          onClick={() => setShowSidebar(true)}
+          className="fixed left-4 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-white transition-colors hover:bg-dark-surface/50 rounded-lg z-40"
+          title="Show file history"
+        >
+          <Clock size={20} />
+        </button>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
