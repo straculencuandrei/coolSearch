@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
 import { Search, File as FileIcon, Folder, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench, Sparkles, Download, X, Clock } from "lucide-react";
 import { check } from "@tauri-apps/plugin-updater";
+import { getVersion } from "@tauri-apps/api/app";
 import "./App.css";
 
-const CURRENT_VERSION = "0.1.91";
+const CURRENT_VERSION = "0.1.98";
 
 interface FileRecord {
   id: number;
@@ -32,6 +33,7 @@ function App() {
   const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const [releaseNotes, setReleaseNotes] = useState<string>("");
   const [showNotes, setShowNotes] = useState(false);
+  const [appVersion, setAppVersion] = useState(CURRENT_VERSION);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const [sortByExtension, setSortByExtension] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -61,48 +63,60 @@ function App() {
     checkForUpdates();
   }, []);
 
-  // Load history from localStorage
   useEffect(() => {
-    try {
-      const savedHistory = localStorage.getItem('fileHistory');
-      if (savedHistory) {
-        setFileHistory(JSON.parse(savedHistory));
+    const fetchVersion = async () => {
+      try {
+        const version = await getVersion();
+        setAppVersion(version);
+      } catch (e) {
+        console.error("Failed to get version:", e);
       }
-    } catch (e) {
-      console.error("Failed to load history:", e);
-    }
+    };
+    fetchVersion();
+  }, []);
+
+  // Load history from backend
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const savedHistory = await invoke<FileRecord[]>("load_recent_files");
+        if (savedHistory && Array.isArray(savedHistory)) {
+          setFileHistory(savedHistory);
+        }
+      } catch (e) {
+        console.error("Failed to load history:", e);
+      }
+    };
+    loadHistory();
   }, []);
 
   const fetchReleaseNotes = async () => {
     // Hardcoded release notes for offline access
-    const releaseNotesText = `🎉 coolSearch v0.1.91 - Auto-Update Feature & UI Refinements
+    const releaseNotesText = `🎉 coolSearch v0.1.98 - Premium Sidebar & Multi-Drive Scanning
 
-✨ New Features
-• Auto-Update System: The app now automatically detects new releases on GitHub and prompts you to update
-• Seamless Updates: Updates download and install without requiring a full reinstall
-• Version Detection: Smart version comparison ensures update button only appears for newer releases
+✨ New Features & Redesigns
+• Left Sidebar History: Redesigned the file history into a sleek, premium left sidebar resembling modern chat interfaces like ChatGPT, Claude, and Gemini.
+• Sidebar Toggle: Added a dedicated toggle button to seamlessly show/hide the sidebar.
+• Expanded Tracking: The history now tracks up to 30 of your most recently viewed files across app sessions.
+• Multi-Drive MFT Scanning: Eliminated the hardcoded C: drive scanning limitation. coolSearch now automatically detects all logical drives on your system.
+• Multi-Threaded Drive Indexing: Each drive's MFT is scanned independently and merged into a single high-performance index.
+• Complete Drive Integration: Search results and paths now include the correct drive letters (e.g., C:, D:, E:).
+• Robust Drive Access: Drive-specific permission errors are tracked individually, ensuring a single locked drive doesn't block indexing for others.
 
-🎨 UI/UX Improvements
-• Refined File Title: Changed from bold to light font weight for a more elegant appearance
-• Better Overflow Handling: Fixed layout overflow issues in the main container
-• Enhanced Update Button: Centered update notification at the bottom of the screen
+🎨 UI/UX & Performance Improvements
+• Animation Synchronization: Highly optimized expansion and collapse transitions for the sidebar.
+• Smooth Layout Reflows: Eliminated visual lag when toggling the sidebar, ensuring the search layout resizes instantly and gracefully.
+• Typography & Themes: Refined spacing and typography for SF Pro and JetBrains fonts across all themes.
 
-🔧 Backend Improvements
-• Version Sync: Fixed version mismatch between tauri.conf.json and app version
-• Update Detection: Integrated GitHub releases API for automatic update checking on startup
-• Error Handling: Improved robustness of update check mechanism
-
-🐛 Bug Fixes
-• Fixed invisible button text in light theme
-• Resolved update button clipping on smaller screens
-• Corrected version tracking for accurate update detection
+🔧 Backend & Update System
+• Version Sync: Synchronized app version to v0.1.98 across tauri.conf.json, package.json, and the application state.
+• Dynamic Version Detection: Automated checking and retrieval of the running app version via core Tauri APIs.
 
 Installation Options:
-• Download the portable coolSearch_0.1.91.exe for instant use
-• Use the MSI installer for system integration
-• NSIS setup for guided installation
+• Download the portable coolSearch_0.1.98_x64-setup.exe for guided setup.
+• Use the coolSearch_0.1.98_x64_en-US.msi installer for full system integration.
 
-The update system is now fully functional! 🚀`;
+Enjoy a faster and more intuitive coolSearch! 🚀`;
 
     setReleaseNotes(releaseNotesText);
     setShowNotes(true);
@@ -187,7 +201,9 @@ The update system is now fully functional! 🚀`;
     ].slice(0, 30); // Keep only last 30 items
     setFileHistory(updatedHistory);
     try {
-      localStorage.setItem('fileHistory', JSON.stringify(updatedHistory));
+      invoke("save_recent_files", { files: updatedHistory }).catch((err) => {
+        console.error("Failed to save history:", err);
+      });
     } catch (e) {
       console.error("Failed to save history:", e);
     }
@@ -341,12 +357,12 @@ The update system is now fully functional! 🚀`;
               {/* History List */}
               <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {fileHistory.length > 0 ? (
-                  <div className="divide-y divide-gray-800/50 p-2">
+                  <div className="p-2 space-y-1.5 custom-scrollbar overflow-y-auto">
                     {fileHistory.map((file, index) => (
                       <button
                         key={`${file.path}-${index}`}
                         onClick={() => handleFileClick(file)}
-                        className={`w-full text-left px-3 py-3 rounded-lg hover:bg-dark-bg/50 transition-colors group mb-1 flex items-center gap-2 min-w-0 ${currentTheme.startsWith('neon') ? 'hover:neon-border' : ''}`}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl border border-gray-800/30 bg-dark-bg/10 hover:bg-dark-surface/40 hover:border-gray-800/80 transition-all duration-200 group flex items-center gap-3 min-w-0 ${currentTheme.startsWith('neon') ? 'hover:neon-border' : ''}`}
                       >
                         <div className={`flex-shrink-0 ${file.is_dir ? "text-yellow-400" :
                           ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
@@ -387,7 +403,7 @@ The update system is now fully functional! 🚀`;
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             onClick={() => setShowSidebar(true)}
-            className="fixed left-4 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-white transition-colors hover:bg-dark-surface/50 rounded-lg z-40"
+            className="fixed left-4 top-4 sm:left-6 sm:top-6 p-2 text-gray-500 hover:text-white transition-colors hover:bg-dark-surface/50 rounded-lg z-40"
             title="Show file history"
           >
             <Clock size={20} />
@@ -416,7 +432,7 @@ The update system is now fully functional! 🚀`;
           className="text-[10px] uppercase tracking-[0.1em] text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 mr-6"
         >
           <Sparkles size={12} />
-          What's New in 0.1.91?
+          What's New in {appVersion}?
         </button>
       </div>
 
@@ -690,7 +706,7 @@ The update system is now fully functional! 🚀`;
 
       {/* Update Button */}
       <AnimatePresence>
-        {updateAvailable && updateAvailable.version !== CURRENT_VERSION && (
+        {updateAvailable && updateAvailable.version !== appVersion && (
           <motion.div
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -877,7 +893,7 @@ The update system is now fully functional! 🚀`;
                 </div>
                 <div>
                   <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Version</span>
-                  <span className="text-gray-200 font-medium text-base">0.1.91</span>
+                  <span className="text-gray-200 font-medium text-base">{appVersion}</span>
                 </div>
                 <button
                   onClick={() => {

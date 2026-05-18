@@ -506,6 +506,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cool-search"
+version = "0.1.98"
+dependencies = [
+ "bincode",
+ "chrono",
+ "lazy_static",
+ "parking_lot",
+ "rayon",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tauri-plugin-updater",
+ "windows 0.58.0",
+]
+
+[[package]]
 name = "core-foundation"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3684,24 +3702,6 @@ dependencies = [
  "webview2-com",
  "window-vibrancy",
  "windows 0.61.3",
-]
-
-[[package]]
-name = "tauri-app"
-version = "0.1.9"
-dependencies = [
- "bincode",
- "chrono",
- "lazy_static",
- "parking_lot",
- "rayon",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tauri-plugin-updater",
- "windows 0.58.0",
 ]
 
 [[package]]

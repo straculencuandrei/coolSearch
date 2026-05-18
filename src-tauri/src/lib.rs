@@ -1,4 +1,5 @@
 pub mod mft;
+use tauri::Manager;
 
 #[tauri::command]
 fn get_index_status() -> String {
@@ -83,6 +84,27 @@ fn open_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn save_recent_files(app: tauri::AppHandle, files: Vec<mft::FileRecord>) -> Result<(), String> {
+    let dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir());
+    let _ = std::fs::create_dir_all(&dir);
+    let path = dir.join("recent_files.json");
+    let file = std::fs::File::create(path).map_err(|e| e.to_string())?;
+    serde_json::to_writer(file, &files).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn load_recent_files(app: tauri::AppHandle) -> Result<Vec<mft::FileRecord>, String> {
+    let path = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir()).join("recent_files.json");
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
+    let files: Vec<mft::FileRecord> = serde_json::from_reader(file).map_err(|e| e.to_string())?;
+    Ok(files)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -105,7 +127,9 @@ pub fn run() {
             get_file_details,
             open_in_explorer,
             open_url,
-            refresh_index
+            refresh_index,
+            save_recent_files,
+            load_recent_files
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
