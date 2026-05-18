@@ -313,13 +313,15 @@ The update system is now fully functional! 🚀`;
       <div className="absolute inset-0 bg-dark-bg pointer-events-none" />
 
       {/* Sidebar - File History */}
-      {showSidebar && (
-        <motion.div
-          initial={{ x: -256, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -256, opacity: 0 }}
-          className="w-64 bg-dark-surface/30 border-r border-gray-800/50 flex flex-col overflow-hidden flex-shrink-0 z-30"
-        >
+      <AnimatePresence mode="wait">
+        {showSidebar && (
+          <motion.div
+            initial={{ x: -256, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -256, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="w-64 bg-dark-surface/30 border-r border-gray-800/50 flex flex-col overflow-hidden flex-shrink-0 z-30"
+          >
           {/* Sidebar Header */}
           <div className="p-4 border-b border-gray-800/50 flex-shrink-0 flex items-center justify-between">
             <h2 className="text-sm font-bold text-gray-200 uppercase tracking-widest flex items-center gap-2 flex-1">
@@ -328,7 +330,8 @@ The update system is now fully functional! 🚀`;
             </h2>
             <button
               onClick={() => setShowSidebar(false)}
-              className="p-1 text-gray-500 hover:text-white transition-colors"
+              className="p-1 text-gray-500 hover:text-white transition-colors active:scale-90"
+              title="Close sidebar"
             >
               <X size={16} />
             </button>
@@ -370,7 +373,8 @@ The update system is now fully functional! 🚀`;
             )}
           </div>
         </motion.div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Toggle Sidebar Button */}
       {!showSidebar && (
