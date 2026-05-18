@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
-import { Search, File as FileIcon, Folder, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench, Sparkles, Download, X } from "lucide-react";
+import { Search, File as FileIcon, Folder, Terminal, Info, ExternalLink, Music, Image as ImageIcon, ArrowLeft, Copy, FolderOpen, Check, Type, Code, Wrench, Sparkles, Download, X, Clock } from "lucide-react";
 import { check } from "@tauri-apps/plugin-updater";
 import "./App.css";
 
@@ -36,6 +36,8 @@ function App() {
   const [sortByExtension, setSortByExtension] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [fileHistory, setFileHistory] = useState<FileRecord[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleTitleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -57,6 +59,18 @@ function App() {
       }
     };
     checkForUpdates();
+  }, []);
+
+  // Load history from localStorage
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem('fileHistory');
+      if (savedHistory) {
+        setFileHistory(JSON.parse(savedHistory));
+      }
+    } catch (e) {
+      console.error("Failed to load history:", e);
+    }
   }, []);
 
   const fetchReleaseNotes = async () => {
@@ -164,6 +178,18 @@ The update system is now fully functional! 🚀`;
     } catch (e) {
       console.error(e);
       setDetails(null);
+    }
+
+    // Add to history
+    const updatedHistory = [
+      file,
+      ...fileHistory.filter(f => f.path !== file.path)
+    ].slice(0, 30); // Keep only last 30 items
+    setFileHistory(updatedHistory);
+    try {
+      localStorage.setItem('fileHistory', JSON.stringify(updatedHistory));
+    } catch (e) {
+      console.error("Failed to save history:", e);
     }
   };
 
@@ -558,6 +584,111 @@ The update system is now fully functional! 🚀`;
           )}
         </AnimatePresence>
       </div>
+
+      {/* File History Section */}
+      <AnimatePresence>
+        {fileHistory.length > 0 && !selectedFile && query === "" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="flex flex-col items-center justify-center gap-3 px-4 mb-20"
+          >
+            <div className="flex items-center gap-2">
+              <Clock size={14} className="text-gray-500" />
+              <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Latest Viewed</span>
+            </div>
+            <button
+              onClick={() => handleFileClick(fileHistory[0])}
+              className={`flex items-center gap-3 px-6 py-4 bg-dark-surface/50 hover:bg-dark-surface backdrop-blur-xl border border-gray-800 hover:border-gray-700 rounded-xl transition-all w-full max-w-md group ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+            >
+              <div className={`flex-shrink-0 ${fileHistory[0].is_dir ? "text-yellow-400" :
+                ['mp3', 'wav', 'flac'].includes(fileHistory[0].name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
+                  ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(fileHistory[0].name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
+                    "text-gray-400"
+                } ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
+                {fileHistory[0].is_dir ? <Folder size={20} /> :
+                  ['mp3', 'wav', 'flac'].includes(fileHistory[0].name.split('.').pop()?.toLowerCase() || '') ? <Music size={20} /> :
+                    ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(fileHistory[0].name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={20} /> :
+                      <FileIcon size={20} />
+                }
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-sm font-medium text-gray-100 truncate">{fileHistory[0].name}</div>
+                <div className="text-xs text-gray-500 truncate">{fileHistory[0].path}</div>
+              </div>
+              <ArrowLeft size={18} className="flex-shrink-0 group-hover:translate-x-1 transition-transform rotate-180" />
+            </button>
+            {fileHistory.length > 1 && (
+              <button
+                onClick={() => setShowHistory(true)}
+                className="text-xs text-gray-400 hover:text-gray-200 transition-colors underline"
+              >
+                View all {fileHistory.length} recent files
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* File History Modal */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowHistory(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className={`bg-dark-surface border border-gray-800 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-lg sm:text-xl font-bold tracking-tight">Recent Files</span>
+                </div>
+                <button onClick={() => setShowHistory(false)} className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+                {fileHistory.map((file, index) => (
+                  <button
+                    key={`${file.path}-${index}`}
+                    onClick={() => {
+                      handleFileClick(file);
+                      setShowHistory(false);
+                    }}
+                    className={`flex items-center gap-3 w-full px-4 py-3 bg-dark-bg/50 hover:bg-dark-surface/50 border border-gray-800/50 hover:border-gray-700 rounded-lg transition-all group text-left ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+                  >
+                    <div className={`flex-shrink-0 ${file.is_dir ? "text-yellow-400" :
+                      ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-red-500" :
+                        ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? "text-green-500" :
+                          "text-gray-400"
+                      } ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
+                      {file.is_dir ? <Folder size={18} /> :
+                        ['mp3', 'wav', 'flac'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <Music size={18} /> :
+                          ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(file.name.split('.').pop()?.toLowerCase() || '') ? <ImageIcon size={18} /> :
+                            <FileIcon size={18} />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-100 truncate">{file.name}</div>
+                      <div className="text-xs text-gray-500 truncate">{file.path}</div>
+                    </div>
+                    <span className="text-xs text-gray-600 flex-shrink-0">#{index + 1}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Footer Controls */}
       <div className="fixed bottom-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-auto">

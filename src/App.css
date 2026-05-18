@@ -37,7 +37,7 @@
 .theme-light .text-gray-400 { color: var(--text-secondary) !important; }
 .theme-light .text-gray-200 { color: var(--text-primary) !important; }
 .theme-light .text-gray-300 { color: #424245 !important; }
-.theme-light .text-gray-500 { color: var(--text-secondary) !important; }
+.theme-light .text-gray-500 { color: var(--text-primary) !important; }
 .theme-light .bg-dark-surface { background-color: var(--surface-color) !important; }
 .theme-light .bg-dark-bg { background-color: var(--bg-color) !important; }
 .theme-light .border-gray-800 { border-color: var(--border-color) !important; }
@@ -47,6 +47,7 @@
 .theme-light .bg-dark-surface\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
 .theme-light .hover\:bg-dark-surface\/80:hover { background-color: #f0f0f2 !important; }
 .theme-light .bg-dark-bg\/30 { background-color: rgba(0, 0, 0, 0.05) !important; }
+.theme-light .bg-dark-bg\/40 { background-color: #f0f0f2 !important; }
 .theme-light .bg-dark-bg\/50 { background-color: rgba(0, 0, 0, 0.03) !important; }
 .theme-light .custom-scrollbar::-webkit-scrollbar-thumb { background: #d2d2d7; }
 .theme-light .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #86868b; }
