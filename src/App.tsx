@@ -352,15 +352,8 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
         {/* Center: Draggable Spacer */}
         <div data-tauri-drag-region className="flex-1 h-full" />
 
-        {/* Right side: Mac Traffic Lights */}
+        {/* Right side: Mac Traffic Lights in Windows order */}
         <div className="flex items-center gap-2.5 z-10">
-          <button 
-            onClick={() => appWindow.close()}
-            className="w-3.5 h-3.5 rounded-full bg-[#ff5f56] border border-[#e0443e] active:bg-[#bf3b36] transition-colors relative group flex items-center justify-center cursor-default"
-            title="Close"
-          >
-            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#4c0002] font-black select-none pointer-events-none transition-opacity absolute leading-none">✕</span>
-          </button>
           <button 
             onClick={() => appWindow.minimize()}
             className="w-3.5 h-3.5 rounded-full bg-[#ffbd2e] border border-[#dfa224] active:bg-[#c08a1c] transition-colors relative group flex items-center justify-center cursor-default"
@@ -374,6 +367,13 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
             title="Maximize"
           >
             <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#004d02] font-black select-none pointer-events-none transition-opacity absolute leading-none">＋</span>
+          </button>
+          <button 
+            onClick={() => appWindow.close()}
+            className="w-3.5 h-3.5 rounded-full bg-[#ff5f56] border border-[#e0443e] active:bg-[#bf3b36] transition-colors relative group flex items-center justify-center cursor-default"
+            title="Close"
+          >
+            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#4c0002] font-black select-none pointer-events-none transition-opacity absolute leading-none">✕</span>
           </button>
         </div>
       </div>
