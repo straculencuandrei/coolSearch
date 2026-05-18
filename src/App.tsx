@@ -343,7 +343,16 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
         data-tauri-drag-region 
         className={`h-10 bg-dark-surface/50 border-b ${currentTheme === 'light' ? 'border-gray-300' : 'border-gray-800/30'} flex items-center justify-between px-4 select-none z-50 flex-shrink-0 relative ${currentTheme.startsWith('neon') ? 'neon-border border-b' : ''}`}
       >
-        {/* Left side: Mac Traffic Lights */}
+        {/* Left side: App Icon & Name */}
+        <div data-tauri-drag-region className="flex items-center gap-2 text-xs font-mono text-gray-400 select-none z-10">
+          <Search size={13} className={currentTheme.startsWith('neon') ? 'neon-text' : currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'} />
+          <span data-tauri-drag-region className={titleTextClass}>coolSearch</span>
+        </div>
+
+        {/* Center: Draggable Spacer */}
+        <div data-tauri-drag-region className="flex-1 h-full" />
+
+        {/* Right side: Mac Traffic Lights */}
         <div className="flex items-center gap-2.5 z-10">
           <button 
             onClick={() => appWindow.close()}
@@ -367,15 +376,6 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
             <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#004d02] font-black select-none pointer-events-none transition-opacity absolute leading-none">＋</span>
           </button>
         </div>
-
-        {/* Center: App Icon & Name */}
-        <div data-tauri-drag-region className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 text-xs font-mono text-gray-400 select-none">
-          <Search size={13} className={currentTheme.startsWith('neon') ? 'neon-text' : currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'} />
-          <span data-tauri-drag-region className={titleTextClass}>coolSearch</span>
-        </div>
-
-        {/* Right side: Transparent spacer to balance layout */}
-        <div className="w-16 h-full pointer-events-none" />
       </div>
 
       {/* Main Body (Sidebar + Content Area) */}
