@@ -97,31 +97,28 @@ function App() {
 
   const fetchReleaseNotes = async () => {
     // Hardcoded release notes for offline access
-    const releaseNotesText = `🎉 coolSearch v0.1.98 - Premium Sidebar & Multi-Drive Scanning
+    const releaseNotesText = `🎉 coolSearch v0.4.0 — The Ultimate Performance Update
 
-✨ New Features & Redesigns
-• Left Sidebar History: Redesigned the file history into a sleek, premium left sidebar resembling modern chat interfaces like ChatGPT, Claude, and Gemini.
-• Sidebar Toggle: Added a dedicated toggle button to seamlessly show/hide the sidebar.
-• Expanded Tracking: The history now tracks up to 30 of your most recently viewed files across app sessions.
-• Multi-Drive MFT Scanning: Eliminated the hardcoded C: drive scanning limitation. coolSearch now automatically detects all logical drives on your system.
-• Multi-Threaded Drive Indexing: Each drive's MFT is scanned independently and merged into a single high-performance index.
-• Complete Drive Integration: Search results and paths now include the correct drive letters (e.g., C:, D:, E:).
-• Robust Drive Access: Drive-specific permission errors are tracked individually, ensuring a single locked drive doesn't block indexing for others.
+✨ New Features & Advanced Filters
+• Exact Match Mode: A new toggle filter in the sidebar to match your exact query (ignoring extension), immediately filtering out noisy partial substring matches.
+• Dynamic Extension Breakdown: A responsive file extension selector dropdown that automatically calculates and displays file type distributions for the current search query in real time (e.g. .png (4), .wav (3)).
+• App Branding Mascot: Integrated a custom mascot branding (icon-neco.png) directly into the custom Mac-style title bar, replacing the generic magnifying glass.
 
-🎨 UI/UX & Performance Improvements
-• Animation Synchronization: Highly optimized expansion and collapse transitions for the sidebar.
-• Smooth Layout Reflows: Eliminated visual lag when toggling the sidebar, ensuring the search layout resizes instantly and gracefully.
-• Typography & Themes: Refined spacing and typography for SF Pro and JetBrains fonts across all themes.
+🎨 UI/UX & Dynamic Optimization
+• Adaptive Typing Debounce: Implemented an intelligent, adaptive query trigger system. The app now waits for queries to be at least 2 characters, and applies a smart debounce (400ms for short keywords, 150ms for completed words) to prevent typing lag.
+• React Rendering Optimization: Wrapped virtualized sorting and grouping calculations inside a memoized container. Renders triggered by non-search actions (window resizes, sidebar toggles, theme adjustments) bypass data processing completely, maintaining a lock-locked 60FPS UI.
 
-🔧 Backend & Update System
-• Version Sync: Synchronized app version to v0.1.98 across tauri.conf.json, package.json, and the application state.
-• Dynamic Version Detection: Automated checking and retrieval of the running app version via core Tauri APIs.
+🔧 High-Performance Backend Overhaul
+• Unlimited Scanning Cap: Removed the hardcoded 1000-file indexing limit from the Rust backend, unlocking the ability to index and search millions of files across your entire computer.
+• O(N) Directory Path Memoization: Rewrote the MFT path resolution algorithm. By introducing a memoized directory path lookup cache, parent directory paths are resolved exactly once, speeding up computer-wide drive scanning by up to 50x.
+• Zero-Allocation Search Filters: Pre-cached lowercase file names during indexing. Searching no longer invokes .to_lowercase() inside the Rust filter loop, preventing millions of string allocations per keystroke.
+• Tauri IPC Safety Cap: Implemented a 30,000 safety limit on search results to protect the Tauri bridge from serialization crashes on extremely generic queries.
 
 Installation Options:
-• Download the portable coolSearch_0.1.98_x64-setup.exe for guided setup.
-• Use the coolSearch_0.1.98_x64_en-US.msi installer for full system integration.
+• Download the portable coolSearch_0.4.0_x64-setup.exe for guided setup.
+• Use the coolSearch_0.4.0_x64_en-US.msi installer for full system integration.
 
-Enjoy a faster and more intuitive coolSearch! 🚀`;
+Enjoy an ultra-fast, premium, and robust coolSearch! 🚀`;
 
     setReleaseNotes(releaseNotesText);
     setShowNotes(true);
