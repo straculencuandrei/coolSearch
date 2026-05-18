@@ -321,7 +321,7 @@ fn get_logical_drives() -> Vec<char> {
     drives
 }
 
-pub fn search(query: &str, limit: usize) -> Vec<FileRecord> {
+pub fn search(query: &str) -> Vec<FileRecord> {
     let state = GLOBAL_INDEX.read();
     let q = query.to_lowercase();
 
@@ -330,7 +330,6 @@ pub fn search(query: &str, limit: usize) -> Vec<FileRecord> {
         .records
         .iter()
         .filter(|r| r.name.to_lowercase().contains(&q))
-        .take(limit)
         .cloned()
         .collect()
 }

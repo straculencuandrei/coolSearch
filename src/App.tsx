@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
@@ -39,6 +39,8 @@ function App() {
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const [sortByExtension, setSortByExtension] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [exactMatch, setExactMatch] = useState(false);
+  const [selectedExtension, setSelectedExtension] = useState<string>("All");
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [fileHistory, setFileHistory] = useState<FileRecord[]>([]);
   const [showSidebar, setShowSidebar] = useState(true);
@@ -233,14 +235,50 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const availableExtensions = useMemo(() => {
+    let baseResults = results;
+    if (exactMatch && query) {
+      const lowerQuery = query.toLowerCase();
+      baseResults = baseResults.filter(file => {
+        const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        return file.name.toLowerCase() === lowerQuery || nameWithoutExt.toLowerCase() === lowerQuery;
+      });
+    }
+    
+    const extCounts: { [key: string]: number } = {};
+    baseResults.forEach(file => {
+      const ext = file.is_dir ? '[FOLDER]' : (file.name.split('.').pop()?.toLowerCase() || '[NO EXT]');
+      extCounts[ext] = (extCounts[ext] || 0) + 1;
+    });
+    
+    return extCounts;
+  }, [results, exactMatch, query]);
+
   const getSortedResults = (): FileRecord[] => {
+    let filteredResults = results;
+
+    if (exactMatch && query) {
+      const lowerQuery = query.toLowerCase();
+      filteredResults = filteredResults.filter(file => {
+        const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        return file.name.toLowerCase() === lowerQuery || nameWithoutExt.toLowerCase() === lowerQuery;
+      });
+    }
+
+    if (selectedExtension && selectedExtension !== "All") {
+      filteredResults = filteredResults.filter(file => {
+        const ext = file.is_dir ? '[FOLDER]' : (file.name.split('.').pop()?.toLowerCase() || '[NO EXT]');
+        return ext === selectedExtension;
+      });
+    }
+
     if (!sortByExtension) {
-      return results;
+      return filteredResults;
     }
 
     const grouped: { [key: string]: FileRecord[] } = {};
     
-    results.forEach(file => {
+    filteredResults.forEach(file => {
       const ext = file.is_dir ? '[FOLDER]' : (file.name.split('.').pop()?.toLowerCase() || '[NO EXT]');
       if (!grouped[ext]) {
         grouped[ext] = [];
@@ -664,7 +702,42 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
               {!isMobile && (
                 <div className={`${isSmall ? 'w-36' : 'w-48'} bg-dark-bg/40 border-r border-gray-800/50 flex flex-col p-3 sm:p-4 gap-4 flex-shrink-0 overflow-y-auto`}>
                   <div>
-                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold block mb-3">Sort Options</span>
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold block mb-3">Filters</span>
+                    
+                    <button
+                      onClick={() => setExactMatch(!exactMatch)}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 mb-3 rounded-lg border text-xs font-medium transition-all ${
+                        exactMatch
+                          ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300'
+                          : 'bg-dark-surface/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Type size={14} />
+                        <span>Exact Match</span>
+                      </div>
+                      {exactMatch && <Check size={14} />}
+                    </button>
+
+                    <div className="flex flex-col gap-1 mb-4">
+                      <span className="text-[10px] text-gray-500 font-bold px-1">EXTENSION</span>
+                      <select
+                        value={selectedExtension}
+                        onChange={(e) => setSelectedExtension(e.target.value)}
+                        className="w-full bg-dark-surface/50 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-2 focus:outline-none focus:border-gray-500 custom-scrollbar"
+                      >
+                        <option value="All">All Extensions</option>
+                        {Object.entries(availableExtensions)
+                          .sort((a, b) => b[1] - a[1]) // Sort by count descending
+                          .map(([ext, count]) => (
+                            <option key={ext} value={ext}>
+                              {ext} ({count})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold block mb-3 pt-3 border-t border-gray-800/50">Sort Options</span>
                   </div>
 
                   <div className="flex flex-col gap-3">

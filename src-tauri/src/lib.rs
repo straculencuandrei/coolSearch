@@ -62,7 +62,7 @@ fn search_files(query: &str) -> Vec<mft::FileRecord> {
     if query.is_empty() {
         return Vec::new();
     }
-    mft::search(query, 1000)
+    mft::search(query)
 }
 
 #[tauri::command]
