@@ -270,13 +270,22 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
     const headerSpace = selectedFile ? 180 : 150;
     return Math.max(windowHeight - headerSpace, 300);
   };
+  const sortedResults = getSortedResults();
+
   const getResponsiveListHeight = () => {
     const containerHeight = getResponsiveContainerHeight();
-    // Account for sort sidebar if not mobile
-    return Math.max(containerHeight - 40, 200);
+    const maxListHeight = Math.max(containerHeight - 40, 200);
+    
+    if (sortedResults.length > 0) {
+      const neededHeight = sortedResults.length * 38;
+      // On desktop, we want a minimum height of ~220px so the Sort Options sidebar fits nicely.
+      // On mobile, we can let it shrink all the way down.
+      const minListHeight = isMobile ? 38 : 220;
+      const targetHeight = Math.max(neededHeight, minListHeight);
+      return Math.min(targetHeight, maxListHeight);
+    }
+    return maxListHeight;
   };
-
-  const sortedResults = getSortedResults();
 
   const Row = ({ index, style }: any) => {
     const file = sortedResults[index];
@@ -603,7 +612,7 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className={`w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-1 mb-6 shadow-2xl flex flex-col sm:flex-row ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              className={`w-full mt-4 bg-dark-surface/50 backdrop-blur-xl border border-gray-800 rounded-2xl overflow-hidden flex-initial h-fit mb-6 shadow-2xl flex flex-col sm:flex-row ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
             >
               {/* Sort Sidebar - Hidden on mobile, collapsed on small screens */}
               {!isMobile && (
