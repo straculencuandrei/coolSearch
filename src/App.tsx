@@ -9,7 +9,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./App.css";
 import iconNeco from "./icon-neco.png";
 
-const CURRENT_VERSION = "0.1.98";
+const CURRENT_VERSION = "0.4.0";
 
 interface FileRecord {
   id: number;
