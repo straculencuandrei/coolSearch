@@ -461,7 +461,7 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             onClick={() => setShowSidebar(true)}
-            className="fixed left-4 top-4 sm:left-6 sm:top-6 p-2 text-gray-500 hover:text-white transition-colors hover:bg-dark-surface/50 rounded-lg z-40"
+            className="fixed left-4 top-14 sm:left-6 sm:top-16 p-2 text-gray-500 hover:text-white transition-colors hover:bg-dark-surface/50 rounded-lg z-40"
             title="Show file history"
           >
             <Clock size={20} />
