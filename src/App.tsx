@@ -312,7 +312,14 @@ Enjoy a faster and more intuitive coolSearch! 🚀`;
     const headerSpace = selectedFile ? 180 : 150;
     return Math.max(windowHeight - headerSpace, 300);
   };
-  const sortedResults = getSortedResults();
+  const sortedResults = useMemo(() => getSortedResults(), [
+    results,
+    query,
+    exactMatch,
+    selectedExtension,
+    sortByExtension,
+    sortOrder
+  ]);
 
   const getResponsiveListHeight = () => {
     const containerHeight = getResponsiveContainerHeight();

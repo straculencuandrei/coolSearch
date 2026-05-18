@@ -32,6 +32,7 @@ pub struct FileRecord {
     pub id: u64,
     pub parent_id: u64,
     pub name: String,
+    pub name_lower: String,
     pub path: String,
     pub is_dir: bool,
 }
@@ -253,33 +254,62 @@ pub fn start_indexing(cache_path: Option<PathBuf>) {
                     let _ = CloseHandle(handle);
                 }
 
+                let mut dir_paths: HashMap<u64, String> = HashMap::new();
+                let drive_root = format!("{}:", drive_letter);
+
                 // Process records for this drive
                 for (_, record) in &raw_records {
-                    let mut path_parts = Vec::new();
-                    path_parts.push(record.name.clone());
+                    let full_path = if record.parent_id == record.id {
+                        format!("{}\\{}", drive_root, record.name)
+                    } else {
+                        // Resolve parent path
+                        let mut path_parts = Vec::new();
+                        let mut current_parent = record.parent_id;
+                        let mut depth = 0;
+                        let mut cached_prefix = None;
 
-                    let mut current_parent = record.parent_id;
-                    let mut depth = 0;
-                    while let Some(parent_record) = raw_records.get(&current_parent) {
-                        if depth > 30 {
-                            break;
-                        }
-                        path_parts.push(parent_record.name.clone());
-                        if parent_record.parent_id == current_parent {
-                            break;
-                        }
-                        current_parent = parent_record.parent_id;
-                        depth += 1;
-                    }
+                        while let Some(parent_record) = raw_records.get(&current_parent) {
+                            if depth > 30 {
+                                break;
+                            }
+                            
+                            if let Some(cached) = dir_paths.get(&current_parent) {
+                                cached_prefix = Some(cached.clone());
+                                break;
+                            }
 
-                    path_parts.push(format!("{}:", drive_letter));
-                    path_parts.reverse();
-                    let full_path = path_parts.join("\\");
+                            path_parts.push(parent_record.name.clone());
+                            if parent_record.parent_id == current_parent {
+                                break;
+                            }
+                            current_parent = parent_record.parent_id;
+                            depth += 1;
+                        }
+
+                        let resolved_parent = if let Some(prefix) = cached_prefix {
+                            if path_parts.is_empty() {
+                                prefix
+                            } else {
+                                path_parts.reverse();
+                                format!("{}\\{}", prefix, path_parts.join("\\"))
+                            }
+                        } else {
+                            path_parts.push(drive_root.clone());
+                            path_parts.reverse();
+                            path_parts.join("\\")
+                        };
+
+                        // Cache the parent path
+                        dir_paths.insert(record.parent_id, resolved_parent.clone());
+
+                        format!("{}\\{}", resolved_parent, record.name)
+                    };
 
                     all_records.push(FileRecord {
                         id: record.id,
                         parent_id: record.parent_id,
                         name: record.name.clone(),
+                        name_lower: record.name.to_lowercase(),
                         path: full_path,
                         is_dir: record.is_dir,
                     });
@@ -325,11 +355,11 @@ pub fn search(query: &str) -> Vec<FileRecord> {
     let state = GLOBAL_INDEX.read();
     let q = query.to_lowercase();
 
-    // Fast parallel search (mocked as sequential for simplicity, rayon can be used)
+    // Fast sequential search using pre-cached lowercase name
     state
         .records
         .iter()
-        .filter(|r| r.name.to_lowercase().contains(&q))
+        .filter(|r| r.name_lower.contains(&q))
         .take(30000) // Safety cap of 30,000 results to prevent Tauri IPC / React bridge crash
         .cloned()
         .collect()
