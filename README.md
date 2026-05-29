@@ -16,6 +16,10 @@
 13. [Build & Deployment](#build--deployment)
 
 ---
+## Disclaimer
+The description of the project is HUGE. By analyzing every aspect of the app, some people that might want to do this kind of search util, will have an easier time understanding how it works.
+Anyways, if you care to jump to one part specifically, there's shortcuts, enjoy!
+
 
 ## Project Overview
 
