@@ -105,6 +105,21 @@ fn load_recent_files(app: tauri::AppHandle) -> Result<Vec<mft::FileRecord>, Stri
     Ok(files)
 }
 
+#[tauri::command]
+fn get_available_drives() -> Vec<String> {
+    let state = mft::GLOBAL_INDEX.read();
+    if !state.indexed_drives.is_empty() {
+        return state.indexed_drives.clone();
+    }
+    let mut set = std::collections::BTreeSet::new();
+    for r in &state.records {
+        if r.path.len() >= 2 && r.path.chars().nth(1) == Some(':') {
+            set.insert(r.path[0..2].to_uppercase());
+        }
+    }
+    set.into_iter().collect()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -123,6 +138,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build()) // Requires pubkey in tauri.conf.json
         .invoke_handler(tauri::generate_handler![
             get_index_status,
+            get_available_drives,
             search_files,
             get_file_details,
             open_in_explorer,
