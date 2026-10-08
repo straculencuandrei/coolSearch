@@ -447,8 +447,9 @@ $step5Action = {
     }
 
     $versionManifestJson = $versionManifest | ConvertTo-Json -Depth 4
-    $versionManifestJson | Set-Content -Path $versionManifestPath -Encoding UTF8
-    $versionManifestJson | Set-Content -Path (Join-Path $releaseDir "version_manifest.json") -Encoding UTF8
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($versionManifestPath, $versionManifestJson, $utf8NoBom)
+    [System.IO.File]::WriteAllText((Join-Path $releaseDir "version_manifest.json"), $versionManifestJson, $utf8NoBom)
 
     return "Assembly complete."
 }

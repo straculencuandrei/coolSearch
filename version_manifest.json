@@ -1,12 +1,12 @@
-﻿{
-    "version":  "0.4.0",
-    "build_number":  5,
-    "title":  "coolSearch v0.4.0 Update",
-    "release_notes":  "â€¢ O(N) NTFS Indexing Speedup: Instant drive indexing with parent directory memoization.\nâ€¢ Exact Match Search Filter: Instant toggle to match exact filenames ignoring extensions.\nâ€¢ Dynamic Extension Selector: Real-time extension breakdown dropdown with item counts.\nâ€¢ Adaptive Keystroke Debouncing: Smooth keystroke processing for million-file search indices.\nâ€¢ React Rendering Optimization: 60FPS UI transitions with memoized file results.\nâ€¢ Instant In-App Updates: Instant OTA update detection, progress tracking, and one-click installation.",
-    "windows_url":  "https://github.com/straculencuandrei/coolSearch/releases/download/v0.4.0/coolSearch_0.4.0_x64-setup.exe",
-    "portable_url":  "https://github.com/straculencuandrei/coolSearch/releases/download/v0.4.0/coolSearch.exe",
-    "msi_url":  "https://github.com/straculencuandrei/coolSearch/releases/download/v0.4.0/coolSearch_0.4.0_x64_en-US.msi",
-    "zip_url":  "https://github.com/straculencuandrei/coolSearch/releases/download/v0.4.0/coolSearch-v0.4.0-windows-x64.zip",
-    "published_at":  "2026-10-08T20:39:03Z",
-    "is_mandatory":  false
+{
+  "version": "0.4.0",
+  "build_number": 5,
+  "title": "coolSearch v0.4.0 Update",
+  "release_notes": "• O(N) NTFS Indexing Speedup: Instant drive indexing with parent directory memoization.\n• Exact Match Search Filter: Instant toggle to match exact filenames ignoring extensions.\n• Dynamic Extension Selector: Real-time extension breakdown dropdown with item counts.\n• Adaptive Keystroke Debouncing: Smooth keystroke processing for million-file search indices.\n• React Rendering Optimization: 60FPS UI transitions with memoized file results.\n• Instant In-App Updates: Instant OTA update detection, progress tracking, and one-click installation.",
+  "windows_url": "https://github.com/straculencuandrei/coolSearch/releases/download/v0.4/coolSearch_0.4.0_x64-setup.exe",
+  "portable_url": "https://github.com/straculencuandrei/coolSearch/releases/download/v0.4/coolSearch.exe",
+  "msi_url": "https://github.com/straculencuandrei/coolSearch/releases/download/v0.4/coolSearch_0.4.0_x64_en-US.msi",
+  "zip_url": "https://github.com/straculencuandrei/coolSearch/releases/download/v0.4/coolSearch-v0.4.0-windows-x64.zip",
+  "published_at": "2026-10-08T20:39:03Z",
+  "is_mandatory": false
 }
