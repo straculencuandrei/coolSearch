@@ -28,3 +28,8 @@ dist-ssr
 # Allow project screenshots to be tracked
 !screenshots/
 !screenshots/*
+
+# Build and Release Outputs
+release/
+src-tauri/target/
+
