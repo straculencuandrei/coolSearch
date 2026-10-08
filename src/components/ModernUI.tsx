@@ -529,10 +529,14 @@ export const ModernUI: React.FC<ModernUIProps> = ({
           {/* Quick toggle to Slim Mode */}
           <button
             onClick={() => onSwitchUI('classic')}
-            className="ml-3 px-2 py-0.5 rounded bg-gray-800/60 hover:bg-emerald-600/30 border border-gray-700/50 hover:border-emerald-500/50 text-[10px] text-gray-300 hover:text-emerald-300 flex items-center gap-1 transition-all"
+            className={`ml-3 px-2 py-0.5 rounded text-[10px] flex items-center gap-1 transition-all border ${
+              currentTheme === 'light'
+                ? 'bg-gray-100 hover:bg-emerald-50 border-gray-300 hover:border-emerald-400 text-gray-700 hover:text-emerald-700'
+                : 'bg-gray-800/60 hover:bg-emerald-600/30 border-gray-700/50 hover:border-emerald-500/50 text-gray-300 hover:text-emerald-300'
+            }`}
             title="Switch to Ultra-Slim Mode"
           >
-            <Zap size={11} className="text-emerald-400" />
+            <Zap size={11} className={currentTheme === 'light' ? 'text-emerald-600' : 'text-emerald-400'} />
             <span>Slim Mode</span>
           </button>
         </div>

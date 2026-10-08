@@ -299,7 +299,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => updateSetting('theme', t.id as any)}
                         className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-all ${
                           settings.theme === t.id
-                            ? 'bg-blue-600/20 border-blue-500 text-white font-bold'
+                            ? 'bg-blue-600 border-blue-500 text-white font-bold shadow-sm'
                             : 'bg-[#202026] border-[#2e2e38] text-gray-400 hover:border-gray-500'
                         }`}
                       >
