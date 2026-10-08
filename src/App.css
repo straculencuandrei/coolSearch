@@ -9,8 +9,49 @@
   --accent-color: var(--theme-accent, #ffffff);
 }
 
+/* ========================================================
+   UNIVERSAL THEME VARIABLES & OVERRIDES
+   ======================================================== */
+:root {
+  --app-bg: #18181b;
+  --app-surface: #202025;
+  --app-surface-elevated: #26262d;
+  --app-border: #2d2d35;
+  --app-text: #f3f4f6;
+  --app-text-muted: #9ca3af;
+  --app-text-faint: #6b7280;
+  --app-accent: #3b82f6;
+  --app-font: 'Ubuntu', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+:root.font-ubuntu, body.font-ubuntu, .font-ubuntu {
+  --app-font: 'Ubuntu', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+:root.font-sfpro, body.font-sfpro, .font-sfpro {
+  --app-font: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+:root.font-jetbrains, body.font-jetbrains, .font-jetbrains {
+  --app-font: 'JetBrains Mono', Consolas, monospace !important;
+}
+:root.font-system, body.font-system, .font-system {
+  --app-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Universal Font Application */
+*, *::before, *::after {
+  font-family: inherit;
+}
+
+html, body, #root, .app-root {
+  font-family: var(--app-font) !important;
+}
+
+input, button, select, textarea, span, p, h1, h2, h3, h4, table, th, td, label {
+  font-family: var(--app-font);
+}
+
 .theme-matte-dark {
-  --bg-color: #1a1a1a;
+  --bg-color: #18181b;
   --surface-color: #242424;
   --theme-accent: #ffffff;
   --text-primary: #f5f5f7;
@@ -18,62 +59,315 @@
   --border-color: rgba(255, 255, 255, 0.1);
 }
 
+/* ========================================================
+   LIGHT THEME
+   ======================================================== */
 .theme-light {
-  --bg-color: #f5f5f7;
+  --bg-color: #f4f5f7;
   --surface-color: #ffffff;
-  --theme-accent: #0071e3;
-  --text-primary: #1d1d1f;
-  --text-secondary: #86868b;
-  --border-color: rgba(0, 0, 0, 0.1);
+  --theme-accent: #0078d7;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --border-color: #e2e4e9;
+}
+
+.theme-light body {
+  background-color: #f4f5f7 !important;
+  color: #111827 !important;
+}
+
+.theme-light .bg-dark-bg,
+.theme-light .bg-\[\#18181b\],
+.theme-light .bg-\[\#161618\],
+.theme-light .bg-\[\#151518\] {
+  background-color: #f4f5f7 !important;
+}
+
+.theme-light .bg-dark-surface,
+.theme-light .bg-\[\#1f1f23\],
+.theme-light .bg-\[\#1a1a1f\],
+.theme-light .bg-\[\#17171b\],
+.theme-light .bg-\[\#19191d\],
+.theme-light .bg-\[\#232328\],
+.theme-light .bg-\[\#25252b\] {
+  background-color: #ffffff !important;
+}
+
+.theme-light .bg-\[\#202026\],
+.theme-light .bg-dark-surface\/90,
+.theme-light .bg-dark-surface\/80,
+.theme-light .bg-dark-surface\/70,
+.theme-light .bg-dark-surface\/50,
+.theme-light .bg-dark-surface\/40,
+.theme-light .bg-dark-surface\/30 {
+  background-color: #ffffff !important;
+}
+
+.theme-light .border-gray-800,
+.theme-light .border-gray-800\/50,
+.theme-light .border-gray-800\/40,
+.theme-light .border-gray-800\/30,
+.theme-light .border-gray-700,
+.theme-light .border-gray-700\/60,
+.theme-light .border-gray-700\/50,
+.theme-light .border-\[\#2d2d33\],
+.theme-light .border-\[\#2b2b33\],
+.theme-light .border-\[\#26262e\],
+.theme-light .border-\[\#272730\],
+.theme-light .border-\[\#32323d\],
+.theme-light .border-\[\#3b3b44\],
+.theme-light .border-\[\#29292d\],
+.theme-light .border-\[\#30303a\],
+.theme-light .border-\[\#2e2e38\] {
+  border-color: #e2e4e9 !important;
+}
+
+.theme-light .text-white,
+.theme-light .text-\[\#e0e0e0\],
+.theme-light .text-gray-100,
+.theme-light .text-gray-200 {
+  color: #111827 !important;
+}
+
+.theme-light .text-gray-300,
+.theme-light .text-gray-400 {
+  color: #4b5563 !important;
+}
+
+.theme-light .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+.theme-light input,
+.theme-light select {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+
+.theme-light input::placeholder {
+  color: #9ca3af !important;
+}
+
+.theme-light button {
+  color: #111827;
+}
+
+.theme-light .hover\:bg-\[\#25252b\]:hover,
+.theme-light .hover\:bg-white\/5:hover,
+.theme-light .hover\:bg-white\/10:hover {
+  background-color: #f0f2f5 !important;
+}
+
+.theme-light .hover\:bg-\[\#333\]:hover {
+  background-color: #e2e4e9 !important;
+}
+
+.theme-light .bg-dark-bg\/10,
+.theme-light .bg-dark-bg\/30,
+.theme-light .bg-dark-bg\/40,
+.theme-light .bg-dark-bg\/50 {
+  background-color: #f0f2f5 !important;
 }
 
 .theme-light .chrome-title {
-  background: linear-gradient(to bottom, #333 0%, #111 100%);
+  background: linear-gradient(to bottom, #222 0%, #000 100%);
   -webkit-background-clip: text;
   background-clip: text;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
 }
 
-.theme-light .text-gray-100 { color: var(--text-primary) !important; }
-.theme-light .text-gray-400 { color: var(--text-secondary) !important; }
-.theme-light .text-gray-200 { color: var(--text-primary) !important; }
-.theme-light .text-gray-300 { color: #424245 !important; }
-.theme-light .text-gray-500 { color: var(--text-primary) !important; }
-.theme-light .bg-dark-surface { background-color: var(--surface-color) !important; }
-.theme-light .bg-dark-bg { background-color: var(--bg-color) !important; }
-.theme-light .border-gray-800 { border-color: var(--border-color) !important; }
-.theme-light .border-gray-800\/50 { border-color: var(--border-color) !important; }
-.theme-light .matte-border { border-color: var(--border-color) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-.theme-light .bg-dark-surface\/50 { background-color: rgba(255, 255, 255, 0.7) !important; }
-.theme-light .bg-dark-surface\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
-.theme-light .hover\:bg-dark-surface\/80:hover { background-color: #f0f0f2 !important; }
-.theme-light .bg-dark-bg\/30 { background-color: rgba(0, 0, 0, 0.05) !important; }
-.theme-light .bg-dark-bg\/40 { background-color: #f0f0f2 !important; }
-.theme-light .bg-dark-bg\/50 { background-color: rgba(0, 0, 0, 0.03) !important; }
-.theme-light .custom-scrollbar::-webkit-scrollbar-thumb { background: #d2d2d7; }
-.theme-light .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #86868b; }
-.theme-light .text-white { color: #1d1d1f !important; }
-.theme-light h2 { color: #1d1d1f !important; }
+.theme-light .matte-border {
+  border-color: #e2e4e9 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
 
+.theme-light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d2d2d7;
+}
+
+.theme-light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #86868b;
+}
+
+/* ========================================================
+   NEON BLUE THEME
+   ======================================================== */
 .theme-neon-blue {
-  --bg-color: #050505;
-  --surface-color: #0a0a0a;
+  --bg-color: #030712;
+  --surface-color: #081226;
   --theme-accent: #00f2ff;
   --neon-glow: 0 0 15px rgba(0, 242, 255, 0.5);
 }
 
+.theme-neon-blue body {
+  background-color: #030712 !important;
+  color: #e0f2fe !important;
+}
+
+.theme-neon-blue .bg-dark-bg,
+.theme-neon-blue .bg-\[\#18181b\],
+.theme-neon-blue .bg-\[\#161618\],
+.theme-neon-blue .bg-\[\#151518\] {
+  background-color: #030712 !important;
+}
+
+.theme-neon-blue .bg-dark-surface,
+.theme-neon-blue .bg-\[\#1f1f23\],
+.theme-neon-blue .bg-\[\#1a1a1f\],
+.theme-neon-blue .bg-\[\#17171b\],
+.theme-neon-blue .bg-\[\#19191d\],
+.theme-neon-blue .bg-\[\#232328\],
+.theme-neon-blue .bg-\[\#25252b\] {
+  background-color: #081226 !important;
+}
+
+.theme-neon-blue .bg-\[\#202026\] {
+  background-color: #0c1c38 !important;
+}
+
+.theme-neon-blue .border-gray-800,
+.theme-neon-blue .border-gray-800\/50,
+.theme-neon-blue .border-gray-700,
+.theme-neon-blue .border-\[\#2d2d33\],
+.theme-neon-blue .border-\[\#2b2b33\],
+.theme-neon-blue .border-\[\#26262e\],
+.theme-neon-blue .border-\[\#272730\],
+.theme-neon-blue .border-\[\#32323d\],
+.theme-neon-blue .border-\[\#29292d\] {
+  border-color: rgba(0, 242, 255, 0.3) !important;
+}
+
+.theme-neon-blue .text-white,
+.theme-neon-blue .text-\[\#e0e0e0\],
+.theme-neon-blue .text-gray-100,
+.theme-neon-blue .text-gray-200 {
+  color: #e0f2fe !important;
+}
+
+.theme-neon-blue .text-gray-300,
+.theme-neon-blue .text-gray-400 {
+  color: #38bdf8 !important;
+}
+
+/* ========================================================
+   NEON RED THEME
+   ======================================================== */
 .theme-neon-red {
-  --bg-color: #050000;
-  --surface-color: #0a0000;
+  --bg-color: #0e0205;
+  --surface-color: #1a060c;
   --theme-accent: #ff003c;
   --neon-glow: 0 0 15px rgba(255, 0, 60, 0.5);
 }
 
+.theme-neon-red body {
+  background-color: #0e0205 !important;
+  color: #ffe4e6 !important;
+}
+
+.theme-neon-red .bg-dark-bg,
+.theme-neon-red .bg-\[\#18181b\],
+.theme-neon-red .bg-\[\#161618\],
+.theme-neon-red .bg-\[\#151518\] {
+  background-color: #0e0205 !important;
+}
+
+.theme-neon-red .bg-dark-surface,
+.theme-neon-red .bg-\[\#1f1f23\],
+.theme-neon-red .bg-\[\#1a1a1f\],
+.theme-neon-red .bg-\[\#17171b\],
+.theme-neon-red .bg-\[\#19191d\],
+.theme-neon-red .bg-\[\#232328\],
+.theme-neon-red .bg-\[\#25252b\] {
+  background-color: #1a060c !important;
+}
+
+.theme-neon-red .bg-\[\#202026\] {
+  background-color: #280a13 !important;
+}
+
+.theme-neon-red .border-gray-800,
+.theme-neon-red .border-gray-800\/50,
+.theme-neon-red .border-gray-700,
+.theme-neon-red .border-\[\#2d2d33\],
+.theme-neon-red .border-\[\#2b2b33\],
+.theme-neon-red .border-\[\#26262e\],
+.theme-neon-red .border-\[\#272730\],
+.theme-neon-red .border-\[\#32323d\],
+.theme-neon-red .border-\[\#29292d\] {
+  border-color: rgba(255, 0, 60, 0.3) !important;
+}
+
+.theme-neon-red .text-white,
+.theme-neon-red .text-\[\#e0e0e0\],
+.theme-neon-red .text-gray-100,
+.theme-neon-red .text-gray-200 {
+  color: #ffe4e6 !important;
+}
+
+.theme-neon-red .text-gray-300,
+.theme-neon-red .text-gray-400 {
+  color: #fb7185 !important;
+}
+
+/* ========================================================
+   NEON GREEN THEME
+   ======================================================== */
 .theme-neon-green {
-  --bg-color: #000500;
-  --surface-color: #000a00;
+  --bg-color: #020a04;
+  --surface-color: #06180a;
   --theme-accent: #39ff14;
   --neon-glow: 0 0 15px rgba(57, 255, 20, 0.5);
+}
+
+.theme-neon-green body {
+  background-color: #020a04 !important;
+  color: #dcfce7 !important;
+}
+
+.theme-neon-green .bg-dark-bg,
+.theme-neon-green .bg-\[\#18181b\],
+.theme-neon-green .bg-\[\#161618\],
+.theme-neon-green .bg-\[\#151518\] {
+  background-color: #020a04 !important;
+}
+
+.theme-neon-green .bg-dark-surface,
+.theme-neon-green .bg-\[\#1f1f23\],
+.theme-neon-green .bg-\[\#1a1a1f\],
+.theme-neon-green .bg-\[\#17171b\],
+.theme-neon-green .bg-\[\#19191d\],
+.theme-neon-green .bg-\[\#232328\],
+.theme-neon-green .bg-\[\#25252b\] {
+  background-color: #06180a !important;
+}
+
+.theme-neon-green .bg-\[\#202026\] {
+  background-color: #0b2611 !important;
+}
+
+.theme-neon-green .border-gray-800,
+.theme-neon-green .border-gray-800\/50,
+.theme-neon-green .border-gray-700,
+.theme-neon-green .border-\[\#2d2d33\],
+.theme-neon-green .border-\[\#2b2b33\],
+.theme-neon-green .border-\[\#26262e\],
+.theme-neon-green .border-\[\#272730\],
+.theme-neon-green .border-\[\#32323d\],
+.theme-neon-green .border-\[\#29292d\] {
+  border-color: rgba(57, 255, 20, 0.3) !important;
+}
+
+.theme-neon-green .text-white,
+.theme-neon-green .text-\[\#e0e0e0\],
+.theme-neon-green .text-gray-100,
+.theme-neon-green .text-gray-200 {
+  color: #dcfce7 !important;
+}
+
+.theme-neon-green .text-gray-300,
+.theme-neon-green .text-gray-400 {
+  color: #4ade80 !important;
 }
 
 .neon-border {
@@ -278,7 +572,7 @@
 
 /* Ubuntu Font System */
 .font-ubuntu {
-  font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--app-font);
 }
 
 .font-ubuntu-mono {

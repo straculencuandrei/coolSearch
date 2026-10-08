@@ -42,7 +42,11 @@ const getFileExtension = (name: string, is_dir: boolean): string => {
 type FileRowProps = {
   items: FileRecord[];
   onFileClick: (file: FileRecord) => void;
+  onFileDoubleClick?: (file: FileRecord) => void;
   currentTheme: string;
+  query: string;
+  highlightMatches: boolean;
+  showFileExtensions: boolean;
 };
 
 type ListRowProps = {
@@ -52,7 +56,7 @@ type ListRowProps = {
 } & FileRowProps;
 
 const FileRow = (props: ListRowProps): React.ReactElement | null => {
-  const { index, style, items, onFileClick, currentTheme } = props;
+  const { index, style, items, onFileClick, onFileDoubleClick, currentTheme, query, highlightMatches, showFileExtensions } = props;
   const file = items[index];
   if (!file) return null;
 
@@ -71,10 +75,27 @@ const FileRow = (props: ListRowProps): React.ReactElement | null => {
     IconComponent = ImageIcon;
   }
 
+  const renderName = () => {
+    if (!highlightMatches || !query.trim()) return file.name;
+    const q = query.trim().toLowerCase();
+    const idx = file.name.toLowerCase().indexOf(q);
+    if (idx === -1) return file.name;
+    return (
+      <>
+        {file.name.slice(0, idx)}
+        <span className="text-blue-400 font-bold bg-blue-500/20 px-0.5 rounded">
+          {file.name.slice(idx, idx + q.length)}
+        </span>
+        {file.name.slice(idx + q.length)}
+      </>
+    );
+  };
+
   return (
     <div
       style={style}
       onClick={() => onFileClick(file)}
+      onDoubleClick={() => onFileDoubleClick && onFileDoubleClick(file)}
       className="flex items-center px-4 border-b border-gray-800/40 hover:bg-dark-surface/80 transition-colors duration-75 cursor-pointer group"
     >
       <div className={`mr-3 transition-transform group-hover:scale-110 flex-shrink-0 ${iconColor} ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
@@ -82,12 +103,17 @@ const FileRow = (props: ListRowProps): React.ReactElement | null => {
       </div>
       <div className="flex-1 truncate flex flex-col justify-center py-1.5 min-w-0">
         <div className="text-gray-100 font-medium text-[11.5px] truncate leading-none mb-1">
-          {file.name}
+          {renderName()}
         </div>
         <div className="text-[9.5px] text-gray-500 truncate leading-none font-mono">
           {file.path}
         </div>
       </div>
+      {showFileExtensions && (
+        <span className="ml-2 px-1.5 py-0.5 rounded text-[9.5px] font-mono bg-dark-surface/90 border border-gray-700/50 text-gray-400 flex-shrink-0">
+          {ext}
+        </span>
+      )}
     </div>
   );
 };
@@ -312,6 +338,31 @@ export const ModernUI: React.FC<ModernUIProps> = ({
     });
   }, []);
 
+  const handleFileLaunch = useCallback(async (file: FileRecord) => {
+    try {
+      if (settings.primaryAction === 'explorer') {
+        await invoke("open_folder", { path: file.path });
+      } else {
+        if (file.is_dir) {
+          await invoke("open_folder", { path: file.path });
+        } else {
+          await invoke("open_file", { path: file.path });
+        }
+      }
+      if (settings.closeOnLaunch) {
+        appWindow.minimize().catch(() => {});
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [settings.primaryAction, settings.closeOnLaunch, appWindow]);
+
+  const openFileDirectly = useCallback(async () => {
+    if (selectedFile) {
+      await handleFileLaunch(selectedFile);
+    }
+  }, [selectedFile, handleFileLaunch]);
+
   const copyPath = useCallback(() => {
     if (selectedFile) {
       navigator.clipboard.writeText(selectedFile.path);
@@ -372,6 +423,18 @@ export const ModernUI: React.FC<ModernUIProps> = ({
       });
     }
 
+    if (!settings.searchInPath && query.trim()) {
+      const q = query.trim().toLowerCase();
+      filtered = filtered.filter(f => f.name.toLowerCase().includes(q));
+    }
+
+    if (settings.excludedPaths && settings.excludedPaths.length > 0) {
+      filtered = filtered.filter(f => {
+        const lowerPath = f.path.toLowerCase();
+        return !settings.excludedPaths.some(p => lowerPath.includes(p.toLowerCase()));
+      });
+    }
+
     if (selectedExtension && selectedExtension !== "All") {
       filtered = filtered.filter(file => getFileExtension(file.name, file.is_dir) === selectedExtension);
     }
@@ -412,14 +475,16 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   const isMobile = windowWidth < 768;
   const isSmall = windowWidth < 1024;
 
+  const rowHeight = settings.rowDensity === 'compact' ? 30 : settings.rowDensity === 'spacious' ? 46 : 38;
+
   const getResponsiveListHeight = () => {
     const headerSpace = selectedFile ? 180 : 150;
     const containerHeight = Math.max(windowHeight - headerSpace, 300);
     const maxListHeight = Math.max(containerHeight - 40, 200);
 
     if (sortedResults.length > 0) {
-      const neededHeight = sortedResults.length * 38;
-      const minListHeight = isMobile ? 38 : 220;
+      const neededHeight = sortedResults.length * rowHeight;
+      const minListHeight = isMobile ? rowHeight : 220;
       return Math.min(Math.max(neededHeight, minListHeight), maxListHeight);
     }
     return maxListHeight;
@@ -725,6 +790,13 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                       </p>
                       <div className="flex gap-2 mt-2 flex-wrap">
                         <button
+                          onClick={openFileDirectly}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold transition-colors whitespace-nowrap shadow-sm"
+                        >
+                          <ExternalLink size={14} />
+                          Open
+                        </button>
+                        <button
                           onClick={copyPath}
                           className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors whitespace-nowrap"
                         >
@@ -885,12 +957,16 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                           className="custom-scrollbar w-full"
                           style={{ height: getResponsiveListHeight() }}
                           rowCount={sortedResults.length}
-                          rowHeight={38}
+                          rowHeight={rowHeight}
                           rowComponent={FileRow as any}
                           rowProps={{
                             items: sortedResults,
                             onFileClick: handleFileClick,
                             currentTheme,
+                            query,
+                            highlightMatches: settings.highlightMatches,
+                            showFileExtensions: settings.showFileExtensions,
+                            onFileDoubleClick: handleFileLaunch,
                           }}
                         />
                       </div>

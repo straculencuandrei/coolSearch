@@ -18,6 +18,7 @@ export interface AppSettings {
   uiMode: UIMode;
   theme: 'matte-dark' | 'light' | 'neon-blue' | 'neon-red' | 'neon-green';
   fontFamily: 'ubuntu' | 'sfpro' | 'jetbrains' | 'system';
+  zoomLevel: number;
   rowDensity: 'compact' | 'standard' | 'spacious';
   highlightMatches: boolean;
   showFileExtensions: boolean;
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   uiMode: 'modern',
   theme: 'matte-dark',
   fontFamily: 'ubuntu',
+  zoomLevel: 1.0,
   rowDensity: 'standard',
   highlightMatches: true,
   showFileExtensions: true,

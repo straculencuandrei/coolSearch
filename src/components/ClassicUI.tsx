@@ -52,6 +52,9 @@ interface ClassicRowProps {
   onSelect: (index: number) => void;
   onOpen: (file: FileRecord) => void;
   onContextMenu: (e: React.MouseEvent, index: number, file: FileRecord) => void;
+  query: string;
+  highlightMatches: boolean;
+  showFileExtensions: boolean;
 }
 
 // Memoized Row component outside ClassicUI to prevent remounting rows on resize
@@ -64,12 +67,31 @@ const ClassicRow = React.memo<ClassicRowProps>(({
   onSelect,
   onOpen,
   onContextMenu,
+  query,
+  highlightMatches,
+  showFileExtensions,
 }) => {
   const file = items[index];
   if (!file) return null;
   const isSelected = index === selectedIndex;
   const ext = getFileExtension(file.name, file.is_dir);
-  const totalWidth = columnWidths.name + columnWidths.path + columnWidths.type;
+  const totalWidth = columnWidths.name + columnWidths.path + (showFileExtensions ? columnWidths.type : 0);
+
+  const renderName = () => {
+    if (!highlightMatches || !query.trim()) return file.name;
+    const q = query.trim().toLowerCase();
+    const idx = file.name.toLowerCase().indexOf(q);
+    if (idx === -1) return file.name;
+    return (
+      <>
+        {file.name.slice(0, idx)}
+        <span className="text-blue-400 font-bold bg-blue-500/25 px-0.5 rounded">
+          {file.name.slice(idx, idx + q.length)}
+        </span>
+        {file.name.slice(idx + q.length)}
+      </>
+    );
+  };
 
   return (
     <div
@@ -81,7 +103,7 @@ const ClassicRow = React.memo<ClassicRowProps>(({
       onClick={() => onSelect(index)}
       onDoubleClick={() => onOpen(file)}
       onContextMenu={(e) => onContextMenu(e, index, file)}
-      className={`flex items-center px-2 border-b border-[#29292d] text-xs font-ubuntu cursor-default select-none ${
+      className={`flex items-center px-2 border-b border-[#29292d] text-xs cursor-default select-none ${
         isSelected
           ? 'bg-[#0078d7] text-white'
           : 'text-gray-200 hover:bg-[#25252b]'
@@ -97,24 +119,26 @@ const ClassicRow = React.memo<ClassicRowProps>(({
         ) : (
           <FileIcon size={14} className={isSelected ? 'text-white' : 'text-gray-400 flex-shrink-0'} />
         )}
-        <span className="truncate">{file.name}</span>
+        <span className="truncate">{renderName()}</span>
       </div>
 
       {/* Path Column */}
       <div
         style={{ width: columnWidths.path }}
-        className={`truncate px-2 font-ubuntu-mono text-[11px] flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+        className={`truncate px-2 font-mono text-[11px] flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
       >
         {file.path}
       </div>
 
       {/* Type Column */}
-      <div
-        style={{ width: columnWidths.type }}
-        className={`truncate px-2 text-right font-ubuntu-mono text-[11px] flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
-      >
-        {ext}
-      </div>
+      {showFileExtensions && (
+        <div
+          style={{ width: columnWidths.type }}
+          className={`truncate px-2 text-right font-mono text-[11px] flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+        >
+          {ext}
+        </div>
+      )}
     </div>
   );
 });
@@ -346,6 +370,11 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
       res = res.filter(f => !f.is_dir);
     }
 
+    if (!settings.searchInPath && query.trim()) {
+      const q = query.trim().toLowerCase();
+      res = res.filter(f => f.name.toLowerCase().includes(q));
+    }
+
     if (exactMatch && query.trim()) {
       const q = query.trim().toLowerCase();
       res = res.filter(f => f.name.toLowerCase() === q);
@@ -506,13 +535,13 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
     return () => window.removeEventListener('click', handleClick);
   }, []);
 
-  const totalColumnsWidth = columnWidths.name + columnWidths.path + columnWidths.type;
+  const totalColumnsWidth = columnWidths.name + columnWidths.path + (settings.showFileExtensions ? columnWidths.type : 0);
 
   // Row height based on settings
   const rowHeight = settings.rowDensity === 'compact' ? 20 : settings.rowDensity === 'spacious' ? 30 : 24;
 
   return (
-    <div className="h-screen w-screen bg-[#18181b] text-[#e0e0e0] flex flex-col font-ubuntu select-none overflow-hidden border border-[#2d2d33]">
+    <div className="h-screen w-screen bg-[#18181b] text-[#e0e0e0] flex flex-col select-none overflow-hidden border border-[#2d2d33]">
       {/* Title Bar */}
       <div 
         data-tauri-drag-region 
@@ -886,29 +915,31 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               </div>
 
               {/* Type Column Header */}
-              <div
-                style={{ width: columnWidths.type }}
-                className="relative flex-shrink-0 flex items-center justify-between px-2 cursor-pointer hover:text-white select-none"
-                onClick={() => handleHeaderClick('type')}
-              >
-                <span className="truncate">Type</span>
-                {sortColumn === 'type' && <span className="ml-1 text-[9px]">{sortAsc ? '▲' : '▼'}</span>}
-                
-                {/* Centered Draggable Resizer Handle */}
+              {settings.showFileExtensions && (
                 <div
-                  onMouseDown={(e) => handleStartResize('type', e)}
-                  onDoubleClick={(e) => handleResetWidth('type', e)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute -right-2.5 top-0 bottom-0 w-5 cursor-col-resize z-30 flex items-center justify-center group/handle select-none"
-                  title="Drag left/right to resize Type (Double-click to reset)"
+                  style={{ width: columnWidths.type }}
+                  className="relative flex-shrink-0 flex items-center justify-between px-2 cursor-pointer hover:text-white select-none"
+                  onClick={() => handleHeaderClick('type')}
                 >
-                  <div className={`w-[2px] h-full transition-colors ${
-                    activeResizingColumn === 'type' 
-                      ? 'bg-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.8)]' 
-                      : 'bg-[#3d3d44] group-hover/handle:bg-blue-400'
-                  }`} />
+                  <span className="truncate">Type</span>
+                  {sortColumn === 'type' && <span className="ml-1 text-[9px]">{sortAsc ? '▲' : '▼'}</span>}
+                  
+                  {/* Centered Draggable Resizer Handle */}
+                  <div
+                    onMouseDown={(e) => handleStartResize('type', e)}
+                    onDoubleClick={(e) => handleResetWidth('type', e)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute -right-2.5 top-0 bottom-0 w-5 cursor-col-resize z-30 flex items-center justify-center group/handle select-none"
+                    title="Drag left/right to resize Type (Double-click to reset)"
+                  >
+                    <div className={`w-[2px] h-full transition-colors ${
+                      activeResizingColumn === 'type' 
+                        ? 'bg-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.8)]' 
+                        : 'bg-[#3d3d44] group-hover/handle:bg-blue-400'
+                    }`} />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Virtualized Table Body */}
@@ -926,6 +957,9 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
                     onSelect: handleSelectFile,
                     onOpen: handleOpenFile,
                     onContextMenu: handleContextMenuOpen,
+                    query,
+                    highlightMatches: settings.highlightMatches,
+                    showFileExtensions: settings.showFileExtensions,
                   }}
                 />
               ) : (

@@ -118,7 +118,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-x-0 bottom-0 ${settings.uiMode === 'classic' ? 'top-7' : 'top-10'} z-[120] bg-black/25 flex items-center justify-center p-3 sm:p-5 select-none font-ubuntu`}
+      className={`fixed inset-x-0 bottom-0 ${settings.uiMode === 'classic' ? 'top-7' : 'top-10'} z-[120] bg-black/25 flex items-center justify-center p-3 sm:p-5 select-none`}
       onClick={onClose}
     >
       <div
@@ -146,7 +146,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search settings (theme, font, drive, debounce)..."
-              className="w-full bg-[#202026] hover:bg-[#23232b] focus:bg-[#202026] border border-[#32323d] focus:border-blue-500 text-xs text-white placeholder-gray-500 pl-8 pr-7 py-1.5 rounded-lg outline-none transition-colors font-ubuntu"
+              className="w-full bg-[#202026] hover:bg-[#23232b] focus:bg-[#202026] border border-[#32323d] focus:border-blue-500 text-xs text-white placeholder-gray-500 pl-8 pr-7 py-1.5 rounded-lg outline-none transition-colors"
             />
             {searchQuery && (
               <button
@@ -281,9 +281,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Theme Palette */}
                 <div className="bg-[#19191d] border border-[#272730] rounded-xl p-3.5 space-y-2.5 hover:border-[#383844] transition-colors">
                   <div>
-                    <h4 className="text-xs font-bold text-white">Theme Palette (Modern UI)</h4>
+                    <h4 className="text-xs font-bold text-white">Theme Palette</h4>
                     <p className="text-[11px] text-gray-400 mt-0.5">
-                      Select color scheme and surface atmosphere for the Modern search experience.
+                      Select color scheme and surface atmosphere for the entire application.
                     </p>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -313,6 +313,87 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                 </div>
 
+                {/* Window Zoom & Scale (VS Code style) */}
+                <div className="bg-[#19191d] border border-[#272730] rounded-xl p-3.5 space-y-2.5 hover:border-[#383844] transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-white">Zoom & Interface Scale</h4>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono font-bold">
+                          {Math.round((settings.zoomLevel || 1.0) * 100)}%
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        Proportionally scale the entire interface in place (VS Code style).
+                      </p>
+                    </div>
+
+                    {/* Quick Stepper Buttons */}
+                    <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                      <button
+                        onClick={() => {
+                          const current = settings.zoomLevel || 1.0;
+                          const next = Math.max(0.7, Math.round((current - 0.1) * 10) / 10);
+                          updateSetting('zoomLevel', next);
+                        }}
+                        className="px-2.5 py-1 bg-[#202026] hover:bg-[#282832] border border-[#30303a] rounded-lg text-xs font-bold text-gray-200 transition-colors"
+                        title="Zoom Out (Ctrl+-)"
+                      >
+                        －
+                      </button>
+                      <button
+                        onClick={() => updateSetting('zoomLevel', 1.0)}
+                        className="px-2 py-1 bg-[#202026] hover:bg-[#282832] border border-[#30303a] rounded-lg text-[10px] font-semibold text-gray-300 transition-colors"
+                        title="Reset Zoom to 100% (Ctrl+0)"
+                      >
+                        100%
+                      </button>
+                      <button
+                        onClick={() => {
+                          const current = settings.zoomLevel || 1.0;
+                          const next = Math.min(2.0, Math.round((current + 0.1) * 10) / 10);
+                          updateSetting('zoomLevel', next);
+                        }}
+                        className="px-2.5 py-1 bg-[#202026] hover:bg-[#282832] border border-[#30303a] rounded-lg text-xs font-bold text-gray-200 transition-colors"
+                        title="Zoom In (Ctrl+=)"
+                      >
+                        ＋
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Preset Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {[
+                      { label: '80%', val: 0.8 },
+                      { label: '90%', val: 0.9 },
+                      { label: '100%', val: 1.0 },
+                      { label: '110%', val: 1.1 },
+                      { label: '125%', val: 1.25 },
+                      { label: '150%', val: 1.5 },
+                      { label: '175%', val: 1.75 },
+                    ].map((p) => {
+                      const isSelected = Math.abs((settings.zoomLevel || 1.0) - p.val) < 0.02;
+                      return (
+                        <button
+                          key={p.label}
+                          onClick={() => updateSetting('zoomLevel', p.val)}
+                          className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                            isSelected
+                              ? 'bg-blue-600 text-white font-bold'
+                              : 'bg-[#202026] hover:bg-[#262630] border border-[#2e2e38] text-gray-400 hover:text-gray-200'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      );
+                    })}
+                    <span className="text-[10px] text-gray-500 ml-auto hidden sm:inline-block">
+                      Shortcuts: <kbd className="font-mono bg-black/30 px-1 rounded">Ctrl+=</kbd> <kbd className="font-mono bg-black/30 px-1 rounded">Ctrl+-</kbd> <kbd className="font-mono bg-black/30 px-1 rounded">Ctrl+0</kbd>
+                    </span>
+                  </div>
+                </div>
+
                 {/* Font Family & Density */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="bg-[#19191d] border border-[#272730] rounded-xl p-3.5 flex flex-col justify-between gap-2.5 hover:border-[#383844] transition-colors">
@@ -323,7 +404,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <select
                       value={settings.fontFamily}
                       onChange={(e) => updateSetting('fontFamily', e.target.value as any)}
-                      className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-ubuntu cursor-pointer"
+                      className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value="ubuntu">Ubuntu (Classic Desktop)</option>
                       <option value="sfpro">SF Pro Display (Clean Apple)</option>
@@ -340,7 +421,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <select
                       value={settings.rowDensity}
                       onChange={(e) => updateSetting('rowDensity', e.target.value as any)}
-                      className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-ubuntu cursor-pointer"
+                      className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value="compact">Compact (Dense 20px)</option>
                       <option value="standard">Standard (Balanced 24px)</option>
@@ -409,7 +490,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <select
                       value={settings.maxResults}
                       onChange={(e) => updateSetting('maxResults', Number(e.target.value))}
-                      className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-ubuntu cursor-pointer"
+                      className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value={150}>150 Results (Fastest)</option>
                       <option value={300}>300 Results</option>
@@ -419,7 +500,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </select>
                   </div>
 
-                  <div className="bg-[#19191d] border border-[#272730] rounded-xl p-3.5 flex flex-col justify-between gap-2 hover:border-[#383844] transition-colors">
+                  <div className="bg-[#19191d] border border-[#272730] rounded-xl p-3.5 flex flex-col justify-between gap-2.5 hover:border-[#383844] transition-colors">
                     <div>
                       <h4 className="text-xs font-bold text-white">Search Input Debounce</h4>
                       <p className="text-[11px] text-gray-400 mt-0.5">Typing delay before query</p>
@@ -427,7 +508,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <select
                       value={settings.debounceMs}
                       onChange={(e) => updateSetting('debounceMs', Number(e.target.value))}
-                      className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-ubuntu cursor-pointer"
+                      className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value={0}>0ms (Instantaneous)</option>
                       <option value={25}>25ms (Default)</option>
@@ -525,7 +606,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       onChange={(e) => setNewExcludePath(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddExcludePath()}
                       placeholder="Add folder pattern to ignore (e.g. node_modules, .git)..."
-                      className="flex-1 bg-[#202026] border border-[#30303a] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 font-ubuntu"
+                      className="flex-1 bg-[#202026] border border-[#30303a] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                     />
                     <button
                       onClick={handleAddExcludePath}
@@ -612,7 +693,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <select
                     value={settings.copyPathFormat}
                     onChange={(e) => updateSetting('copyPathFormat', e.target.value as any)}
-                    className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-ubuntu cursor-pointer"
+                    className="bg-[#202026] border border-[#30303a] text-xs text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 cursor-pointer"
                   >
                     <option value="windows">Standard Windows (C:\Path\file)</option>
                     <option value="quoted">Quoted ("C:\Path\file")</option>
@@ -681,6 +762,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <tr>
                         <td className="py-2 px-3.5">View file properties</td>
                         <td className="py-2 px-3.5 text-right font-mono"><kbd className="px-1.5 py-0.5 rounded bg-[#25252e] border border-[#363644] text-[11px] text-white">Alt + Enter</kbd></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3.5">Zoom In (Interface Scale)</td>
+                        <td className="py-2 px-3.5 text-right font-mono"><kbd className="px-1.5 py-0.5 rounded bg-[#25252e] border border-[#363644] text-[11px] text-white">Ctrl + =</kbd></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3.5">Zoom Out (Interface Scale)</td>
+                        <td className="py-2 px-3.5 text-right font-mono"><kbd className="px-1.5 py-0.5 rounded bg-[#25252e] border border-[#363644] text-[11px] text-white">Ctrl + -</kbd></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3.5">Reset Zoom to 100%</td>
+                        <td className="py-2 px-3.5 text-right font-mono"><kbd className="px-1.5 py-0.5 rounded bg-[#25252e] border border-[#363644] text-[11px] text-white">Ctrl + 0</kbd></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3.5">Zoom via Mouse Wheel</td>
+                        <td className="py-2 px-3.5 text-right font-mono"><kbd className="px-1.5 py-0.5 rounded bg-[#25252e] border border-[#363644] text-[11px] text-white">Ctrl + Scroll</kbd></td>
                       </tr>
                       <tr>
                         <td className="py-2 px-3.5">Clear query / close dialogs</td>
