@@ -179,21 +179,48 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: FileRecord } | null>(null);
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
 
-  // Measured table body height for reliable virtual list scrolling
+  // Measured table container width and body height for responsive columns & virtual list
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const tableBodyRef = useRef<HTMLDivElement>(null);
   const [tableHeight, setTableHeight] = useState<number>(400);
+  const [containerWidth, setContainerWidth] = useState<number>(() => window.innerWidth);
 
   useEffect(() => {
-    if (!tableBodyRef.current) return;
+    const updateDimensions = () => {
+      if (tableContainerRef.current) {
+        const w = tableContainerRef.current.clientWidth;
+        if (w > 50) setContainerWidth(w);
+      }
+      if (tableBodyRef.current) {
+        const h = tableBodyRef.current.clientHeight;
+        if (h > 10) setTableHeight(h);
+      }
+    };
+
+    updateDimensions();
+
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (entry.contentRect.height > 10) {
-          setTableHeight(Math.round(entry.contentRect.height));
+        if (entry.target === tableContainerRef.current) {
+          if (entry.contentRect.width > 50) {
+            setContainerWidth(Math.round(entry.contentRect.width));
+          }
+        } else if (entry.target === tableBodyRef.current) {
+          if (entry.contentRect.height > 10) {
+            setTableHeight(Math.round(entry.contentRect.height));
+          }
         }
       }
     });
-    ro.observe(tableBodyRef.current);
-    return () => ro.disconnect();
+
+    if (tableContainerRef.current) ro.observe(tableContainerRef.current);
+    if (tableBodyRef.current) ro.observe(tableBodyRef.current);
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
   }, []);
 
   // Close context menu on click outside
@@ -565,13 +592,47 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
 
   const zoom = settings.zoomLevel || 1.0;
 
-  const scaledColumnWidths = useMemo(() => ({
-    name: Math.round(columnWidths.name * zoom),
-    path: Math.round(columnWidths.path * zoom),
-    type: Math.round(columnWidths.type * zoom),
-  }), [columnWidths, zoom]);
+  // Dynamically scale Path and Type with window width so they never stay cramped on fullscreen
+  const scaledColumnWidths = useMemo(() => {
+    const baseName = Math.round(columnWidths.name * zoom);
+    const basePath = Math.round(columnWidths.path * zoom);
+    const baseType = Math.round(columnWidths.type * zoom);
+    const hasType = !!settings.showFileExtensions;
 
-  const totalColumnsWidth = scaledColumnWidths.name + scaledColumnWidths.path + (settings.showFileExtensions ? scaledColumnWidths.type : 0);
+    const baseSum = baseName + basePath + (hasType ? baseType : 0);
+    // 16px accounts for px-2 table padding
+    const usableWidth = Math.max(baseSum, containerWidth - 16);
+    const extra = usableWidth - baseSum;
+
+    if (extra <= 0) {
+      return {
+        name: baseName,
+        path: basePath,
+        type: baseType,
+      };
+    }
+
+    if (hasType) {
+      // Allocate 70% extra space to Path (deep folders), 30% to Type (longer extensions)
+      const pathExtra = Math.round(extra * 0.70);
+      const typeExtra = extra - pathExtra;
+      return {
+        name: baseName,
+        path: basePath + pathExtra,
+        type: baseType + typeExtra,
+      };
+    } else {
+      return {
+        name: baseName,
+        path: basePath + extra,
+        type: baseType,
+      };
+    }
+  }, [columnWidths, zoom, containerWidth, settings.showFileExtensions]);
+
+  const totalColumnsWidth = useMemo(() => {
+    return scaledColumnWidths.name + scaledColumnWidths.path + (settings.showFileExtensions ? scaledColumnWidths.type : 0);
+  }, [scaledColumnWidths, settings.showFileExtensions]);
 
   // Row height scaled with zoom
   const baseRowHeight = settings.rowDensity === 'compact' ? 20 : settings.rowDensity === 'spacious' ? 30 : 24;
@@ -750,7 +811,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
       {/* Main Area (Unified Table + Recent Files Drawer) */}
       <div className="flex-1 relative flex overflow-hidden min-h-0">
         {/* Unified Table Container: Header & Virtualized Rows scroll horizontally together */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden bg-[#161618] flex flex-col relative custom-scrollbar min-h-0">
+        <div ref={tableContainerRef} className="flex-1 overflow-x-auto overflow-y-hidden bg-[#161618] flex flex-col relative custom-scrollbar min-h-0">
           <div style={{ width: totalColumnsWidth, minWidth: '100%' }} className="flex flex-col h-full min-h-0">
             {/* Draggable Table Header (Fixed height, does not zoom) */}
             <div 
