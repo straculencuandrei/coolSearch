@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { List } from "react-window";
@@ -43,6 +43,7 @@ type FileRowProps = {
   items: FileRecord[];
   onFileClick: (file: FileRecord) => void;
   onFileDoubleClick?: (file: FileRecord) => void;
+  onContextMenu?: (e: React.MouseEvent, file: FileRecord) => void;
   currentTheme: string;
   query: string;
   highlightMatches: boolean;
@@ -57,7 +58,7 @@ type ListRowProps = {
 } & FileRowProps;
 
 const FileRow = (props: ListRowProps): React.ReactElement | null => {
-  const { index, style, items, onFileClick, onFileDoubleClick, currentTheme, query, highlightMatches, showFileExtensions, zoom } = props;
+  const { index, style, items, onFileClick, onFileDoubleClick, onContextMenu, currentTheme, query, highlightMatches, showFileExtensions, zoom } = props;
   const file = items[index];
   if (!file) return null;
 
@@ -99,10 +100,12 @@ const FileRow = (props: ListRowProps): React.ReactElement | null => {
 
   return (
     <div
+      data-custom-context-menu="true"
       style={style}
       onClick={() => onFileClick(file)}
       onDoubleClick={() => onFileDoubleClick && onFileDoubleClick(file)}
-      className="flex items-center px-4 border-b border-gray-800/40 hover:bg-dark-surface/80 transition-colors duration-75 cursor-pointer group"
+      onContextMenu={(e) => onContextMenu && onContextMenu(e, file)}
+      className="flex items-center px-4 border-b border-gray-800/40 hover:bg-dark-surface/80 transition-colors duration-75 cursor-pointer group select-none"
     >
       <div className={`mr-3 transition-transform group-hover:scale-110 flex-shrink-0 ${iconColor} ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
         <IconComponent size={iconSize} />
@@ -146,7 +149,6 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null);
   const [details, setDetails] = useState<{ size: number; created: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const currentFont = settings.fontFamily || 'ubuntu';
   const currentTheme = settings.theme || 'matte-dark';
@@ -162,6 +164,33 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   const [availableDrives, setAvailableDrives] = useState<string[]>(propDrives || []);
   const [fileHistory, setFileHistory] = useState<FileRecord[]>([]);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: FileRecord } | null>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const [listHeight, setListHeight] = useState<number>(450);
+
+  useEffect(() => {
+    if (!listContainerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.height > 20) {
+          setListHeight(Math.round(entry.contentRect.height));
+        }
+      }
+    });
+    ro.observe(listContainerRef.current);
+    return () => ro.disconnect();
+  }, [results, query]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, file: FileRecord) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, file });
+  }, []);
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
 
   const handleTitleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -227,7 +256,6 @@ export const ModernUI: React.FC<ModernUIProps> = ({
     const handleResize = () => {
       cancelAnimationFrame(rAF);
       rAF = requestAnimationFrame(() => {
-        setWindowHeight(window.innerHeight);
         setWindowWidth(window.innerWidth);
       });
     };
@@ -239,10 +267,16 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   }, []);
 
   useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    const handleGlobalContextMenu = (e: MouseEvent) => {
+      // Prevent browser default Inspect context menu everywhere
+      e.preventDefault();
+    };
     const handleKeydown = (e: KeyboardEvent) => {
       if (e.key === "F12" || (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === "U")) {
         e.preventDefault();
+      } else if (e.key === "Escape") {
+        setContextMenu(null);
+        if (selectedFile) setSelectedFile(null);
       } else if (e.ctrlKey && e.key === ',') {
         e.preventDefault();
         onOpenSettingsModal();
@@ -251,13 +285,13 @@ export const ModernUI: React.FC<ModernUIProps> = ({
         onSwitchUI('classic');
       }
     };
-    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("contextmenu", handleGlobalContextMenu);
     document.addEventListener("keydown", handleKeydown);
     return () => {
-      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("contextmenu", handleGlobalContextMenu);
       document.removeEventListener("keydown", handleKeydown);
     };
-  }, []);
+  }, [selectedFile]);
 
   useEffect(() => {
     let interval: any = null;
@@ -485,19 +519,6 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   const baseRowHeight = settings.rowDensity === 'compact' ? 30 : settings.rowDensity === 'spacious' ? 46 : 38;
   const rowHeight = Math.round(baseRowHeight * zoom);
 
-  const getResponsiveListHeight = () => {
-    const headerSpace = selectedFile ? 180 : 150;
-    const containerHeight = Math.max(windowHeight - headerSpace, 300);
-    const maxListHeight = Math.max(containerHeight - 40, 200);
-
-    if (sortedResults.length > 0) {
-      const neededHeight = sortedResults.length * rowHeight;
-      const minListHeight = isMobile ? rowHeight : 220;
-      return Math.min(Math.max(neededHeight, minListHeight), maxListHeight);
-    }
-    return maxListHeight;
-  };
-
   const fontClass = currentFont === 'ubuntu' ? 'font-ubuntu' : currentFont === 'sfpro' ? 'font-sfpro' : currentFont === 'jetbrains' ? 'font-jetbrains' : '';
   const titleTextClass = currentTheme === 'light' ? 'text-gray-800 font-semibold' : 'font-semibold text-gray-200';
 
@@ -676,7 +697,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
             </button>
           </div>
 
-          <div className="flex flex-col items-center justify-start flex-1 w-full max-w-6xl mx-auto px-6 sm:px-12 md:px-16 z-10 min-h-0 overflow-y-auto pb-16">
+          <div className={`flex flex-col items-center justify-start flex-1 w-full max-w-6xl mx-auto px-4 sm:px-8 md:px-12 z-10 min-h-0 ${query || selectedFile ? 'overflow-hidden pb-3' : 'overflow-y-auto pb-16'}`}>
             {!selectedFile && (
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -717,7 +738,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                     transition-all duration-200 overflow-hidden
                   `}>
                     <div className="pl-3 text-gray-400 group-hover:text-white transition-colors flex-shrink-0">
-                      <Search size={Math.max(16, Math.round(18 * Math.min(zoom, 1.4)))} />
+                      <Search size={18} />
                     </div>
                     <input
                       type="text"
@@ -726,12 +747,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                       onFocus={() => setIsFocused(true)}
                       onBlur={() => setIsFocused(false)}
                       placeholder="Search files or drives (e.g. 'notes', 'd:', 'd:\games')..."
-                      style={{
-                        fontSize: `${Math.round(14 * zoom)}px`,
-                        paddingTop: `${Math.round(10 * Math.min(zoom, 1.3))}px`,
-                        paddingBottom: `${Math.round(10 * Math.min(zoom, 1.3))}px`,
-                      }}
-                      className="w-full bg-transparent border-none text-gray-100 placeholder-gray-500 px-3 focus:outline-none focus:ring-0 min-w-0"
+                      className="w-full bg-transparent border-none text-gray-100 placeholder-gray-500 px-3 py-2.5 text-sm focus:outline-none focus:ring-0 min-w-0"
                       spellCheck={false}
                       autoFocus
                     />
@@ -827,6 +843,18 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                           <FolderOpen size={14} />
                           Open in Explorer
                         </button>
+                        <button
+                          onClick={() => {
+                            if (selectedFile) {
+                              invoke("show_file_properties", { path: selectedFile.path }).catch(console.error);
+                            }
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors whitespace-nowrap"
+                          title="Show Windows Properties"
+                        >
+                          <Wrench size={14} />
+                          Properties
+                        </button>
                       </div>
                     </div>
 
@@ -853,7 +881,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
                   transition={{ duration: 0.12 }}
-                  className={`w-full mt-4 bg-dark-surface/90 border border-gray-800 rounded-2xl overflow-hidden flex-initial h-fit mb-6 shadow-2xl flex flex-col sm:flex-row ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+                  className={`w-full mt-3 bg-dark-surface/90 border border-gray-800 rounded-2xl overflow-hidden flex-1 min-h-0 mb-3 shadow-2xl flex flex-col sm:flex-row ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
                 >
                   {!isMobile && (
                     <div className={`${isSmall ? 'w-40' : 'w-52'} bg-dark-bg/50 border-r border-gray-800/50 flex flex-col p-3 sm:p-4 gap-3 flex-shrink-0 overflow-y-auto`}>
@@ -967,27 +995,26 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                     </div>
                   )}
 
-                  <div className="flex-1 overflow-hidden flex flex-col min-w-0">
+                  <div ref={listContainerRef} className="flex-1 min-h-0 overflow-hidden flex flex-col min-w-0 relative">
                     {sortedResults.length > 0 ? (
-                      <div className="overflow-hidden flex-1" style={{ position: 'relative' }}>
-                        <List
-                          className="custom-scrollbar w-full"
-                          style={{ height: getResponsiveListHeight() }}
-                          rowCount={sortedResults.length}
-                          rowHeight={rowHeight}
-                          rowComponent={FileRow as any}
-                          rowProps={{
-                            items: sortedResults,
-                            onFileClick: handleFileClick,
-                            currentTheme,
-                            query,
-                            highlightMatches: settings.highlightMatches,
-                            showFileExtensions: settings.showFileExtensions,
-                            onFileDoubleClick: handleFileLaunch,
-                            zoom,
-                          }}
-                        />
-                      </div>
+                      <List
+                        className="custom-scrollbar w-full"
+                        style={{ height: listHeight }}
+                        rowCount={sortedResults.length}
+                        rowHeight={rowHeight}
+                        rowComponent={FileRow as any}
+                        rowProps={{
+                          items: sortedResults,
+                          onFileClick: handleFileClick,
+                          currentTheme,
+                          query,
+                          highlightMatches: settings.highlightMatches,
+                          showFileExtensions: settings.showFileExtensions,
+                          onFileDoubleClick: handleFileLaunch,
+                          onContextMenu: handleContextMenu,
+                          zoom,
+                        }}
+                      />
                     ) : (
                       <div className="flex flex-col items-center justify-center flex-1 text-gray-500 py-8">
                         <Terminal size={32} className="mb-2 opacity-50" />
@@ -1131,6 +1158,79 @@ export const ModernUI: React.FC<ModernUIProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Modern Context Menu */}
+        {contextMenu && (
+          <div
+            data-custom-context-menu="true"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            className="fixed z-[200] bg-[#1e1e24] border border-gray-700/80 shadow-2xl py-1.5 rounded-xl text-xs text-gray-200 min-w-[180px] font-sans backdrop-blur-md select-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              onClick={() => {
+                handleFileLaunch(contextMenu.file);
+                setContextMenu(null);
+              }}
+              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+            >
+              <ExternalLink size={14} />
+              <span>Open</span>
+            </div>
+            <div
+              onClick={() => {
+                handleFileClick(contextMenu.file);
+                setContextMenu(null);
+              }}
+              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+            >
+              <Info size={14} />
+              <span>Preview & Details</span>
+            </div>
+            <div
+              onClick={() => {
+                invoke("open_folder", { path: contextMenu.file.path });
+                setContextMenu(null);
+              }}
+              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+            >
+              <FolderOpen size={14} />
+              <span>Open in Explorer</span>
+            </div>
+            <div className="border-t border-gray-700/60 my-1" />
+            <div
+              onClick={() => {
+                navigator.clipboard.writeText(contextMenu.file.path);
+                setContextMenu(null);
+              }}
+              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+            >
+              <Copy size={14} />
+              <span>Copy Full Path</span>
+            </div>
+            <div
+              onClick={() => {
+                navigator.clipboard.writeText(contextMenu.file.name);
+                setContextMenu(null);
+              }}
+              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+            >
+              <Copy size={14} />
+              <span>Copy File Name</span>
+            </div>
+            <div className="border-t border-gray-700/60 my-1" />
+            <div
+              onClick={() => {
+                invoke("show_file_properties", { path: contextMenu.file.path }).catch(console.error);
+                setContextMenu(null);
+              }}
+              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+            >
+              <Wrench size={14} />
+              <span>Properties</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -21,7 +21,8 @@
         "center": true,
         "decorations": false,
         "visible": false,
-        "backgroundColor": [26, 26, 26, 255]
+        "backgroundColor": [26, 26, 26, 255],
+        "devtools": false
       }
     ],
     "security": {

@@ -14,7 +14,7 @@ import {
   Clock,
   Laptop
 } from "lucide-react";
-import { FileRecord, FileDetails, UIMode, AppSettings } from "../types";
+import { FileRecord, UIMode, AppSettings } from "../types";
 import iconNeco from "../icon-neco.png";
 
 interface ClassicUIProps {
@@ -100,6 +100,7 @@ const ClassicRow = React.memo<ClassicRowProps>(({
 
   return (
     <div
+      data-custom-context-menu="true"
       style={{
         ...style,
         width: totalWidth,
@@ -168,13 +169,34 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [sortColumn, setSortColumn] = useState<'name' | 'path' | 'type'>('name');
   const [sortAsc, setSortAsc] = useState<boolean>(true);
-  const [showProperties, setShowProperties] = useState<boolean>(false);
-  const [selectedDetails, setSelectedDetails] = useState<FileDetails | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: FileRecord } | null>(null);
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
 
-  // Menu dropdown state
-  const [activeMenu, setActiveMenu] = useState<'file' | 'edit' | null>(null);
+  // Measured table body height for reliable virtual list scrolling
+  const tableBodyRef = useRef<HTMLDivElement>(null);
+  const [tableHeight, setTableHeight] = useState<number>(400);
+
+  useEffect(() => {
+    if (!tableBodyRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.height > 10) {
+          setTableHeight(Math.round(entry.contentRect.height));
+        }
+      }
+    });
+    ro.observe(tableBodyRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handleClose = () => setContextMenu(null);
+    if (contextMenu) {
+      window.addEventListener('click', handleClose);
+      return () => window.removeEventListener('click', handleClose);
+    }
+  }, [contextMenu]);
 
   // Recent files state & drawer
   const [recentFiles, setRecentFiles] = useState<FileRecord[]>([]);
@@ -198,15 +220,6 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
   const didDragRef = useRef<boolean>(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Close menus on outside click
-  useEffect(() => {
-    const handleCloseMenu = () => setActiveMenu(null);
-    if (activeMenu) {
-      window.addEventListener('click', handleCloseMenu);
-      return () => window.removeEventListener('click', handleCloseMenu);
-    }
-  }, [activeMenu]);
 
   // Load recent files on mount
   useEffect(() => {
@@ -465,11 +478,9 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
 
   const handleViewProperties = useCallback(async (file: FileRecord) => {
     try {
-      const details = await invoke<FileDetails>("get_file_details", { path: file.path });
-      setSelectedDetails(details);
-      setShowProperties(true);
+      await invoke("show_file_properties", { path: file.path });
     } catch (e) {
-      console.error(e);
+      console.error("Failed to show properties:", e);
     }
   }, []);
 
@@ -511,8 +522,6 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
       } else if (e.key === 'Escape') {
         setQuery("");
         setContextMenu(null);
-        setShowProperties(false);
-        setActiveMenu(null);
         setShowRecentDrawer(false);
       } else if (e.ctrlKey && e.key.toLowerCase() === 'm') {
         e.preventDefault();
@@ -551,11 +560,9 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
 
   const totalColumnsWidth = scaledColumnWidths.name + scaledColumnWidths.path + (settings.showFileExtensions ? scaledColumnWidths.type : 0);
 
-  // Row & Header height scaled with zoom
+  // Row height scaled with zoom
   const baseRowHeight = settings.rowDensity === 'compact' ? 20 : settings.rowDensity === 'spacious' ? 30 : 24;
   const rowHeight = Math.round(baseRowHeight * zoom);
-  const headerHeight = Math.max(22, Math.round(24 * Math.min(zoom, 1.35)));
-  const headerFontSize = Math.round(11 * zoom);
 
   return (
     <div className="h-screen w-screen bg-[#18181b] text-[#e0e0e0] flex flex-col select-none overflow-hidden border border-[#2d2d33]">
@@ -598,166 +605,10 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
         </div>
       </div>
 
-      {/* Menu Bar with Working Dropdown Menus */}
-      <div className="h-6 bg-[#232328] border-b border-[#2d2d33] flex items-center px-2 text-xs text-gray-300 gap-1 flex-shrink-0 font-ubuntu relative">
-        {/* File Menu */}
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setActiveMenu(activeMenu === 'file' ? null : 'file');
-            }}
-            className={`px-2 py-0.5 rounded transition-colors ${
-              activeMenu === 'file' ? 'bg-[#383842] text-white' : 'hover:bg-[#333] hover:text-white text-gray-300'
-            }`}
-          >
-            File
-          </button>
-
-          {activeMenu === 'file' && (
-            <div 
-              className="absolute left-0 top-full mt-0.5 z-50 bg-[#25252b] border border-[#3b3b44] shadow-2xl py-1 rounded-md text-xs text-gray-200 min-w-[200px] font-ubuntu flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                disabled={selectedIndex < 0 || !filteredResults[selectedIndex]}
-                onClick={() => {
-                  if (selectedIndex >= 0 && filteredResults[selectedIndex]) {
-                    handleOpenFile(filteredResults[selectedIndex]);
-                  }
-                  setActiveMenu(null);
-                }}
-                className="px-3 py-1.5 hover:bg-[#0078d7] hover:text-white flex items-center justify-between text-left disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400"
-              >
-                <span>Open</span>
-                <span className="text-[10px] text-gray-400 font-mono">Enter</span>
-              </button>
-              <button
-                disabled={selectedIndex < 0 || !filteredResults[selectedIndex]}
-                onClick={() => {
-                  if (selectedIndex >= 0 && filteredResults[selectedIndex]) {
-                    invoke("open_folder", { path: filteredResults[selectedIndex].path });
-                  }
-                  setActiveMenu(null);
-                }}
-                className="px-3 py-1.5 hover:bg-[#0078d7] hover:text-white flex items-center justify-between text-left disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400"
-              >
-                <span>Open in Explorer</span>
-                <span className="text-[10px] text-gray-400 font-mono">Ctrl+Enter</span>
-              </button>
-              <div className="border-t border-[#3b3b44] my-1" />
-              <button
-                disabled={selectedIndex < 0 || !filteredResults[selectedIndex]}
-                onClick={() => {
-                  if (selectedIndex >= 0 && filteredResults[selectedIndex]) {
-                    handleCopyPath(filteredResults[selectedIndex].path);
-                  }
-                  setActiveMenu(null);
-                }}
-                className="px-3 py-1.5 hover:bg-[#0078d7] hover:text-white flex items-center justify-between text-left disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400"
-              >
-                <span>Copy Full Path</span>
-                <span className="text-[10px] text-gray-400 font-mono">Ctrl+C</span>
-              </button>
-              <button
-                disabled={selectedIndex < 0 || !filteredResults[selectedIndex]}
-                onClick={() => {
-                  if (selectedIndex >= 0 && filteredResults[selectedIndex]) {
-                    handleCopyName(filteredResults[selectedIndex].name);
-                  }
-                  setActiveMenu(null);
-                }}
-                className="px-3 py-1.5 hover:bg-[#0078d7] hover:text-white flex items-center justify-between text-left disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400"
-              >
-                <span>Copy File Name</span>
-                <span className="text-[10px] text-gray-400 font-mono">Ctrl+Shift+C</span>
-              </button>
-              <div className="border-t border-[#3b3b44] my-1" />
-              <button
-                disabled={selectedIndex < 0 || !filteredResults[selectedIndex]}
-                onClick={() => {
-                  if (selectedIndex >= 0 && filteredResults[selectedIndex]) {
-                    handleViewProperties(filteredResults[selectedIndex]);
-                  }
-                  setActiveMenu(null);
-                }}
-                className="px-3 py-1.5 hover:bg-[#0078d7] hover:text-white flex items-center justify-between text-left disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400"
-              >
-                <span>Properties</span>
-                <span className="text-[10px] text-gray-400 font-mono">Alt+Enter</span>
-              </button>
-              <div className="border-t border-[#3b3b44] my-1" />
-              <button
-                onClick={() => {
-                  setActiveMenu(null);
-                  appWindow.close();
-                }}
-                className="px-3 py-1.5 hover:bg-[#c42b1c] hover:text-white flex items-center justify-between text-left"
-              >
-                <span>Exit</span>
-                <span className="text-[10px] text-gray-400 font-mono">Alt+F4</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Edit Menu */}
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setActiveMenu(activeMenu === 'edit' ? null : 'edit');
-            }}
-            className={`px-2 py-0.5 rounded transition-colors ${
-              activeMenu === 'edit' ? 'bg-[#383842] text-white' : 'hover:bg-[#333] hover:text-white text-gray-300'
-            }`}
-          >
-            Edit
-          </button>
-
-          {activeMenu === 'edit' && (
-            <div 
-              className="absolute left-0 top-full mt-0.5 z-50 bg-[#25252b] border border-[#3b3b44] shadow-2xl py-1 rounded-md text-xs text-gray-200 min-w-[180px] font-ubuntu flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => {
-                  if (filteredResults.length > 0) setSelectedIndex(0);
-                  setActiveMenu(null);
-                }}
-                className="px-3 py-1.5 hover:bg-[#0078d7] hover:text-white flex items-center justify-between text-left"
-              >
-                <span>Select First</span>
-                <span className="text-[10px] text-gray-400 font-mono">Home</span>
-              </button>
-              <button
-                onClick={() => {
-                  setQuery("");
-                  setActiveMenu(null);
-                }}
-                className="px-3 py-1.5 hover:bg-[#0078d7] hover:text-white flex items-center justify-between text-left"
-              >
-                <span>Clear Query</span>
-                <span className="text-[10px] text-gray-400 font-mono">Esc</span>
-              </button>
-              <div className="border-t border-[#3b3b44] my-1" />
-              <button
-                disabled={selectedIndex < 0 || !filteredResults[selectedIndex]}
-                onClick={() => {
-                  if (selectedIndex >= 0 && filteredResults[selectedIndex]) {
-                    handleCopyPath(filteredResults[selectedIndex].path);
-                  }
-                  setActiveMenu(null);
-                }}
-                className="px-3 py-1.5 hover:bg-[#0078d7] hover:text-white flex items-center justify-between text-left disabled:opacity-40 disabled:hover:bg-transparent"
-              >
-                <span>Copy Path</span>
-                <span className="text-[10px] text-gray-400 font-mono">Ctrl+C</span>
-              </button>
-            </div>
-          )}
-        </div>
-
+      {/* Action Toolbar (Fixed header, does not zoom) */}
+      <div 
+        className="h-7 bg-[#232328] border-b border-[#2d2d33] flex items-center px-2 text-gray-300 text-xs gap-1.5 flex-shrink-0 font-ubuntu relative"
+      >
         {/* Recent Files Button */}
         <button
           onClick={() => setShowRecentDrawer(prev => !prev)}
@@ -768,27 +619,27 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
           }`}
           title="Toggle Recent Files Drawer (Ctrl+H)"
         >
-          <Clock size={12} className={showRecentDrawer ? "text-blue-300" : "text-gray-400"} />
+          <Clock size={13} className={showRecentDrawer ? "text-blue-300" : "text-gray-400"} />
           <span>Recent Files {recentFiles.length > 0 && `(${recentFiles.length})`}</span>
         </button>
 
         {/* Re-Index Action */}
         <button
           onClick={() => invoke("refresh_index")}
-          className="px-2 py-0.5 rounded hover:bg-[#333] hover:text-white transition-colors flex items-center gap-1 text-gray-300"
+          className="px-2 py-0.5 rounded hover:bg-[#333] hover:text-white transition-colors flex items-center gap-1.5 text-gray-300"
           title="Rescan NTFS Master File Table"
         >
-          <RefreshCw size={11} />
+          <RefreshCw size={13} />
           <span>Re-Index</span>
         </button>
 
         {/* Settings Action */}
         <button
           onClick={onOpenSettingsModal}
-          className="px-2 py-0.5 rounded hover:bg-[#333] hover:text-white transition-colors flex items-center gap-1 text-gray-300"
+          className="px-2 py-0.5 rounded hover:bg-[#333] hover:text-white transition-colors flex items-center gap-1.5 text-gray-300"
           title="Settings (Ctrl+,)"
         >
-          <Settings size={11} />
+          <Settings size={13} />
           <span>Settings</span>
         </button>
       </div>
@@ -820,12 +671,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search filename or path (e.g. *.png, notes, c:\windows)..."
               autoFocus
-              style={{
-                fontSize: `${Math.round(12 * zoom)}px`,
-                paddingTop: `${Math.round(4 * Math.min(zoom, 1.4))}px`,
-                paddingBottom: `${Math.round(4 * Math.min(zoom, 1.4))}px`,
-              }}
-              className="w-full bg-[#161618] border border-[#3b3b44] rounded px-2.5 text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-[#161618] border border-[#3b3b44] rounded px-2.5 py-1 text-xs text-white focus:outline-none focus:border-blue-500"
             />
             {query && (
               <button
@@ -839,7 +685,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
         </div>
 
         {/* Quick filter checkboxes */}
-        <div style={{ fontSize: `${Math.round(11 * zoom)}px` }} className="flex items-center gap-4 text-gray-400 px-0.5">
+        <div className="flex items-center gap-4 text-gray-400 px-0.5 text-[11px]">
           <label className="flex items-center gap-1.5 cursor-pointer hover:text-gray-200">
             <input
               type="checkbox"
@@ -877,19 +723,17 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
       </div>
 
       {/* Main Area (Unified Table + Recent Files Drawer) */}
-      <div className="flex-1 relative flex overflow-hidden">
+      <div className="flex-1 relative flex overflow-hidden min-h-0">
         {/* Unified Table Container: Header & Virtualized Rows scroll horizontally together */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden bg-[#161618] flex flex-col relative custom-scrollbar">
-          <div style={{ width: totalColumnsWidth, minWidth: '100%' }} className="flex flex-col h-full">
-            {/* Draggable Table Header */}
+        <div className="flex-1 overflow-x-auto overflow-y-hidden bg-[#161618] flex flex-col relative custom-scrollbar min-h-0">
+          <div style={{ width: totalColumnsWidth, minWidth: '100%' }} className="flex flex-col h-full min-h-0">
+            {/* Draggable Table Header (Fixed height, does not zoom) */}
             <div 
               style={{
                 width: totalColumnsWidth,
                 minWidth: '100%',
-                height: `${headerHeight}px`,
-                fontSize: `${headerFontSize}px`,
               }}
-              className="bg-[#232328] border-b border-[#2d2d33] flex items-center px-2 font-semibold text-gray-300 flex-shrink-0 select-none sticky top-0 z-20"
+              className="h-6 bg-[#232328] border-b border-[#2d2d33] flex items-center px-2 text-[11px] font-semibold text-gray-300 flex-shrink-0 select-none sticky top-0 z-20"
             >
               {/* Name Column Header */}
               <div
@@ -970,10 +814,11 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
             </div>
 
             {/* Virtualized Table Body */}
-            <div className="flex-1 relative">
+            <div ref={tableBodyRef} className="flex-1 min-h-0 relative overflow-hidden">
               {filteredResults.length > 0 ? (
                 <List
-                  className="custom-scrollbar w-full h-full"
+                  className="custom-scrollbar w-full"
+                  style={{ height: tableHeight, width: totalColumnsWidth }}
                   rowCount={filteredResults.length}
                   rowHeight={rowHeight}
                   rowComponent={ClassicRow as any}
@@ -1162,33 +1007,6 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
             className="px-3 py-1 hover:bg-[#0078d7] hover:text-white cursor-pointer"
           >
             Properties
-          </div>
-        </div>
-      )}
-
-      {/* Classic Properties Dialog */}
-      {showProperties && selectedDetails && selectedIndex >= 0 && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 font-ubuntu">
-          <div className="bg-[#242429] border border-[#3d3d46] rounded-xl shadow-2xl p-5 w-96 text-xs text-gray-200 flex flex-col gap-3 glow-modal-outer">
-            <div className="flex items-center justify-between border-b border-[#3d3d46] pb-2 font-semibold text-white">
-              <span className="truncate max-w-[280px]">Properties: {filteredResults[selectedIndex]?.name}</span>
-              <button onClick={() => setShowProperties(false)} className="text-gray-400 hover:text-white">✕</button>
-            </div>
-            <div className="space-y-2 font-ubuntu-mono text-[11px]">
-              <div><span className="text-gray-400 font-ubuntu">Name:</span> {filteredResults[selectedIndex]?.name}</div>
-              <div><span className="text-gray-400 font-ubuntu">Path:</span> <div className="break-all text-gray-300 mt-0.5">{filteredResults[selectedIndex]?.path}</div></div>
-              <div><span className="text-gray-400 font-ubuntu">Size:</span> {selectedDetails.size.toLocaleString()} bytes</div>
-              <div><span className="text-gray-400 font-ubuntu">Created:</span> {selectedDetails.created}</div>
-              <div><span className="text-gray-400 font-ubuntu">Type:</span> {filteredResults[selectedIndex]?.is_dir ? "Directory" : "File"}</div>
-            </div>
-            <div className="flex justify-end pt-2 border-t border-[#3d3d46]">
-              <button
-                onClick={() => setShowProperties(false)}
-                className="px-4 py-1.5 bg-[#33333b] hover:bg-[#44444f] rounded-lg text-white font-medium font-ubuntu"
-              >
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}

@@ -108,6 +108,15 @@ function App() {
           });
         }
       }
+
+      // Block browser dev tools & reload shortcuts so app behaves 100% standalone
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+        (e.ctrlKey && (e.key === 'r' || e.key === 'R' || e.key === 'u' || e.key === 'U'))
+      ) {
+        e.preventDefault();
+      }
     };
 
     const handleWheel = (e: WheelEvent) => {
@@ -124,11 +133,18 @@ function App() {
       }
     };
 
+    // Block default Chromium browser context menu (Inspect, Reload) globally across window & top bar
+    const handleGlobalContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('contextmenu', handleGlobalContextMenu);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('contextmenu', handleGlobalContextMenu);
     };
   }, []);
 

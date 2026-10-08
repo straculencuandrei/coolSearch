@@ -46,14 +46,96 @@ fn get_file_details(path: String) -> Result<FileDetails, String> {
 }
 
 #[tauri::command]
-fn open_in_explorer(path: String) -> Result<(), String> {
-    use std::process::Command;
+fn open_file(path: String) -> Result<(), String> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows::core::PCWSTR;
+    use windows::Win32::UI::Shell::{ShellExecuteExW, SHELLEXECUTEINFOW};
+
     let safe_path = validate_path(&path)?;
-    Command::new("explorer")
-        .arg("/select,")
-        .arg(safe_path)
-        .spawn()
-        .map_err(|e| e.to_string())?;
+    let mut wide_path: Vec<u16> = safe_path.as_os_str().encode_wide().collect();
+    wide_path.push(0);
+    let mut verb: Vec<u16> = "open".encode_utf16().collect();
+    verb.push(0);
+
+    unsafe {
+        let mut info = SHELLEXECUTEINFOW {
+            cbSize: std::mem::size_of::<SHELLEXECUTEINFOW>() as u32,
+            fMask: Default::default(),
+            hwnd: Default::default(),
+            lpVerb: PCWSTR(verb.as_ptr()),
+            lpFile: PCWSTR(wide_path.as_ptr()),
+            lpParameters: PCWSTR::null(),
+            lpDirectory: PCWSTR::null(),
+            nShow: 1,
+            hInstApp: Default::default(),
+            lpIDList: std::ptr::null_mut(),
+            lpClass: PCWSTR::null(),
+            hkeyClass: Default::default(),
+            dwHotKey: 0,
+            Anonymous: Default::default(),
+            hProcess: Default::default(),
+        };
+
+        ShellExecuteExW(&mut info).map_err(|e| format!("Failed to open file: {}", e))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn open_folder(path: String) -> Result<(), String> {
+    let safe_path = validate_path(&path)?;
+    if safe_path.is_dir() {
+        std::process::Command::new("explorer")
+            .arg(&safe_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    } else {
+        std::process::Command::new("explorer")
+            .arg(format!("/select,{}", safe_path.to_string_lossy()))
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn open_in_explorer(path: String) -> Result<(), String> {
+    open_folder(path)
+}
+
+#[tauri::command]
+fn show_file_properties(path: String) -> Result<(), String> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows::core::PCWSTR;
+    use windows::Win32::UI::Shell::{ShellExecuteExW, SHELLEXECUTEINFOW, SEE_MASK_INVOKEIDLIST};
+
+    let safe_path = validate_path(&path)?;
+    let mut wide_path: Vec<u16> = safe_path.as_os_str().encode_wide().collect();
+    wide_path.push(0);
+    let mut verb: Vec<u16> = "properties".encode_utf16().collect();
+    verb.push(0);
+
+    unsafe {
+        let mut info = SHELLEXECUTEINFOW {
+            cbSize: std::mem::size_of::<SHELLEXECUTEINFOW>() as u32,
+            fMask: SEE_MASK_INVOKEIDLIST,
+            hwnd: Default::default(),
+            lpVerb: PCWSTR(verb.as_ptr()),
+            lpFile: PCWSTR(wide_path.as_ptr()),
+            lpParameters: PCWSTR::null(),
+            lpDirectory: PCWSTR::null(),
+            nShow: 5, // SW_SHOW
+            hInstApp: Default::default(),
+            lpIDList: std::ptr::null_mut(),
+            lpClass: PCWSTR::null(),
+            hkeyClass: Default::default(),
+            dwHotKey: 0,
+            Anonymous: Default::default(),
+            hProcess: Default::default(),
+        };
+
+        ShellExecuteExW(&mut info).map_err(|e| format!("Failed to show properties: {}", e))?;
+    }
     Ok(())
 }
 
@@ -141,7 +223,10 @@ pub fn run() {
             get_available_drives,
             search_files,
             get_file_details,
+            open_file,
+            open_folder,
             open_in_explorer,
+            show_file_properties,
             open_url,
             refresh_index,
             save_recent_files,
