@@ -363,6 +363,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   }, [query, settings.debounceMs, settings.maxResults]);
 
   const handleFileClick = useCallback(async (file: FileRecord) => {
+    setDetails(null);
     setSelectedFile(file);
     try {
       const res = await invoke<{ size: number; created: string }>("get_file_details", { path: file.path });
@@ -720,169 +721,147 @@ export const ModernUI: React.FC<ModernUIProps> = ({
               </motion.div>
             )}
 
-            <AnimatePresence>
-              {!selectedFile ? (
-                <motion.div
-                  key="search-bar"
-                  animate={{
-                    y: query || isFocused ? 0 : 30,
-                    scale: query || isFocused ? 1 : 1.03
-                  }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
-                  className="w-full max-w-2xl relative flex-shrink-0"
-                >
-                  <div className={`
-                    relative group flex items-center bg-dark-surface/90 rounded-xl matte-border
-                    ${isFocused ? 'matte-border-focus' : 'border-gray-800'} 
-                    ${currentTheme.startsWith('neon') ? 'neon-border' : ''}
-                    transition-all duration-200 overflow-hidden
-                  `}>
-                    <div className="pl-3 text-gray-400 group-hover:text-white transition-colors flex-shrink-0">
-                      <Search size={18} />
-                    </div>
-                    <input
-                      type="text"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onFocus={() => setIsFocused(true)}
-                      onBlur={() => setIsFocused(false)}
-                      placeholder="Search files or drives (e.g. 'notes', 'd:', 'd:\games')..."
-                      className="w-full bg-transparent border-none text-gray-100 placeholder-gray-500 px-3 py-2.5 text-sm focus:outline-none focus:ring-0 min-w-0"
-                      spellCheck={false}
-                      autoFocus
-                    />
-                    {query && (
-                      <button
-                        onClick={() => setQuery('')}
-                        className="pr-6 text-gray-500 hover:text-white transition-colors flex-shrink-0 text-xs"
-                      >
-                        Clear
-                      </button>
-                    )}
+            {/* Header: Search bar (when searching) or Back button & Path (when previewing) */}
+            {!selectedFile ? (
+              <div className="w-full max-w-2xl relative flex-shrink-0">
+                <div className={`
+                  relative group flex items-center bg-dark-surface/90 rounded-xl matte-border
+                  ${isFocused ? 'matte-border-focus' : 'border-gray-800'} 
+                  ${currentTheme.startsWith('neon') ? 'neon-border' : ''}
+                  transition-all duration-150 overflow-hidden
+                `}>
+                  <div className="pl-3 text-gray-400 group-hover:text-white transition-colors flex-shrink-0">
+                    <Search size={18} />
                   </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="back-header"
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.12 }}
-                  className="w-full max-w-2xl relative z-10 flex-shrink-0 flex items-center justify-center"
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder="Search files or drives (e.g. 'notes', 'd:', 'd:\games')..."
+                    className="w-full bg-transparent border-none text-gray-100 placeholder-gray-500 px-3 py-2.5 text-sm focus:outline-none focus:ring-0 min-w-0"
+                    spellCheck={false}
+                    autoFocus
+                  />
+                  {query && (
+                    <button
+                      onClick={() => setQuery('')}
+                      className="pr-6 text-gray-500 hover:text-white transition-colors flex-shrink-0 text-xs"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="w-full max-w-4xl relative z-10 flex-shrink-0 flex items-center justify-between">
+                <button
+                  onClick={() => setSelectedFile(null)}
+                  className={`flex items-center gap-2 text-gray-300 hover:text-white transition-all bg-dark-surface/80 hover:bg-dark-surface px-4 py-2 rounded-xl border border-gray-800 hover:border-white/20 group shadow-md ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
                 >
-                  <button
-                    onClick={() => setSelectedFile(null)}
-                    className={`flex items-center gap-2 text-gray-400 hover:text-white transition-all bg-dark-surface/70 hover:bg-dark-surface px-5 py-2.5 rounded-xl border border-gray-800 hover:border-white/20 group shadow-lg ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
-                  >
-                    <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform flex-shrink-0" />
-                    <span className="text-sm font-medium">Back to results</span>
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">Back to results</span>
+                </button>
+                <span className={`text-xs font-mono truncate max-w-xs sm:max-w-md px-2 ${currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
+                  {selectedFile.path}
+                </span>
+              </div>
+            )}
 
             {/* Results / Details Container */}
-            <AnimatePresence>
-              {selectedFile ? (
-                <motion.div
-                  key="details"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.15 }}
-                  className={`w-full mt-3 max-w-4xl mx-auto bg-dark-surface/90 border border-gray-800 rounded-2xl p-4 sm:p-5 md:p-8 shadow-2xl flex flex-col md:flex-row gap-4 md:gap-0 flex-1 mb-6 overflow-hidden ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
-                >
-                  <div className="flex-[0.8] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-800/50 pb-4 md:pb-0 md:pr-8">
-                    <div className={`mb-4 md:mb-6 p-4 md:p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 flex-shrink-0 ${
-                      selectedFile.is_dir ? "text-yellow-400" :
-                      ['mp3', 'wav', 'flac'].includes(getFileExtension(selectedFile.name, false)) ? "text-red-500" :
-                      ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(getFileExtension(selectedFile.name, false)) ? "text-green-500 p-0 overflow-hidden" :
-                      "text-gray-400"
-                    } ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}>
-                      {selectedFile.is_dir ? <Folder size={isMobile ? 48 : 64} /> :
-                        ['mp3', 'wav', 'flac'].includes(getFileExtension(selectedFile.name, false)) ? <Music size={isMobile ? 48 : 64} /> :
-                        ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(getFileExtension(selectedFile.name, false)) ? (
-                          <img
-                            src={convertFileSrc(selectedFile.path)}
-                            alt={selectedFile.name}
-                            className="w-32 md:w-48 h-32 md:h-48 object-contain rounded-xl shadow-2xl bg-black/20"
-                          />
-                        ) :
-                        <FileIcon size={isMobile ? 48 : 64} />
-                      }
+            {selectedFile ? (
+              <div
+                className={`w-full mt-3 max-w-4xl mx-auto bg-dark-surface/95 border border-gray-800 rounded-2xl p-4 sm:p-5 md:p-8 shadow-2xl flex flex-col md:flex-row gap-4 md:gap-0 flex-1 min-h-0 mb-3 overflow-hidden ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              >
+                <div className="flex-[0.8] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-800/50 pb-4 md:pb-0 md:pr-8">
+                  <div className={`mb-4 md:mb-6 p-4 md:p-6 rounded-3xl bg-dark-bg/50 border border-gray-800/50 flex-shrink-0 ${
+                    selectedFile.is_dir ? "text-yellow-400" :
+                    ['mp3', 'wav', 'flac'].includes(getFileExtension(selectedFile.name, false)) ? "text-red-500" :
+                    ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(getFileExtension(selectedFile.name, false)) ? "text-green-500 p-0 overflow-hidden" :
+                    "text-gray-400"
+                  } ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}>
+                    {selectedFile.is_dir ? <Folder size={isMobile ? 48 : 64} /> :
+                      ['mp3', 'wav', 'flac'].includes(getFileExtension(selectedFile.name, false)) ? <Music size={isMobile ? 48 : 64} /> :
+                      ['png', 'webp', 'jpg', 'jpeg', 'gif', 'svg'].includes(getFileExtension(selectedFile.name, false)) ? (
+                        <img
+                          src={convertFileSrc(selectedFile.path)}
+                          alt={selectedFile.name}
+                          className="w-32 md:w-48 h-32 md:h-48 object-contain rounded-xl shadow-2xl bg-black/20"
+                        />
+                      ) :
+                      <FileIcon size={isMobile ? 48 : 64} />
+                    }
+                  </div>
+                  <h2 className={`text-lg md:text-xl font-semibold text-center break-all px-2 ${currentTheme === 'light' ? 'text-gray-900' : 'text-gray-100'}`}>
+                    {selectedFile.name}
+                  </h2>
+                  <p className="text-gray-500 text-xs mt-2 uppercase tracking-widest">{selectedFile.is_dir ? 'Directory' : 'File'}</p>
+                </div>
+
+                <div className="flex-1 md:pl-8 flex flex-col justify-center gap-4 md:gap-6 px-0 md:px-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Absolute Path</span>
+                    <p className={`text-xs md:text-sm break-all font-mono p-2 md:p-3 rounded-lg border ${currentTheme === 'light' ? 'bg-gray-100 text-gray-800 border-gray-200' : 'bg-dark-bg/40 text-gray-300 border-gray-800/40'}`}>
+                      {selectedFile.path}
+                    </p>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <button
+                        onClick={openFileDirectly}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold transition-colors whitespace-nowrap shadow-sm"
+                      >
+                        <ExternalLink size={14} />
+                        Open
+                      </button>
+                      <button
+                        onClick={copyPath}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors whitespace-nowrap border ${currentTheme === 'light' ? 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700' : 'bg-dark-bg border-gray-800 text-gray-300 hover:border-white/30'}`}
+                      >
+                        {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                        {copied ? 'Copied!' : 'Copy Path'}
+                      </button>
+                      <button
+                        onClick={openExplorer}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors whitespace-nowrap border ${currentTheme === 'light' ? 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700' : 'bg-dark-bg border-gray-800 text-gray-300 hover:border-white/30'}`}
+                      >
+                        <FolderOpen size={14} />
+                        Open in Explorer
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (selectedFile) {
+                            invoke("show_file_properties", { path: selectedFile.path }).catch(console.error);
+                          }
+                        }}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors whitespace-nowrap border ${currentTheme === 'light' ? 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700' : 'bg-dark-bg border-gray-800 text-gray-300 hover:border-white/30'}`}
+                        title="Show Windows Properties"
+                      >
+                        <Wrench size={14} />
+                        Properties
+                      </button>
                     </div>
-                    <h2 className="text-lg md:text-xl font-light text-center break-all px-2">{selectedFile.name}</h2>
-                    <p className="text-gray-500 text-xs mt-2 uppercase tracking-widest">{selectedFile.is_dir ? 'Directory' : 'File'}</p>
                   </div>
 
-                  <div className="flex-1 md:pl-8 flex flex-col justify-center gap-4 md:gap-6 px-0 md:px-4">
+                  <div className="grid grid-cols-2 gap-2 md:gap-4">
                     <div className="space-y-1">
-                      <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Absolute Path</span>
-                      <p className="text-xs md:text-sm text-gray-300 break-all font-mono bg-dark-bg/40 p-2 md:p-3 rounded-lg border border-gray-800/40">
-                        {selectedFile.path}
+                      <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Size</span>
+                      <p className={`text-sm md:text-base font-semibold ${currentTheme === 'light' ? 'text-gray-900' : 'text-gray-100'}`}>
+                        {details ? formatSize(details.size) : <span className="text-gray-500 font-normal">Calculating...</span>}
                       </p>
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        <button
-                          onClick={openFileDirectly}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold transition-colors whitespace-nowrap shadow-sm"
-                        >
-                          <ExternalLink size={14} />
-                          Open
-                        </button>
-                        <button
-                          onClick={copyPath}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors whitespace-nowrap"
-                        >
-                          {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                          {copied ? 'Copied!' : 'Copy Path'}
-                        </button>
-                        <button
-                          onClick={openExplorer}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors whitespace-nowrap"
-                        >
-                          <FolderOpen size={14} />
-                          Open in Explorer
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selectedFile) {
-                              invoke("show_file_properties", { path: selectedFile.path }).catch(console.error);
-                            }
-                          }}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-dark-bg border border-gray-800 rounded-md text-xs hover:border-white/30 transition-colors whitespace-nowrap"
-                          title="Show Windows Properties"
-                        >
-                          <Wrench size={14} />
-                          Properties
-                        </button>
-                      </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-2 md:gap-4">
-                      <div className="space-y-1">
-                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Size</span>
-                        <p className="text-base md:text-lg font-medium text-gray-200">
-                          {details ? formatSize(details.size) : 'Loading...'}
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Created</span>
-                        <p className="text-xs md:text-sm font-medium text-gray-300">
-                          {details ? details.created : 'Loading...'}
-                        </p>
-                      </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Created</span>
+                      <p className={`text-xs md:text-sm font-medium ${currentTheme === 'light' ? 'text-gray-700' : 'text-gray-300'}`}>
+                        {details ? details.created : <span className="text-gray-500 font-normal">—</span>}
+                      </p>
                     </div>
                   </div>
-                </motion.div>
-              ) : query && (
-                <motion.div
-                  key="results"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.12 }}
-                  className={`w-full mt-3 bg-dark-surface/90 border border-gray-800 rounded-2xl overflow-hidden flex-1 min-h-0 mb-3 shadow-2xl flex flex-col sm:flex-row ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
-                >
+                </div>
+              </div>
+            ) : query ? (
+              <div
+                className={`w-full mt-3 bg-dark-surface/90 border border-gray-800 rounded-2xl overflow-hidden flex-1 min-h-0 mb-3 shadow-2xl flex flex-col sm:flex-row ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+              >
                   {!isMobile && (
                     <div className={`${isSmall ? 'w-40' : 'w-52'} bg-dark-bg/50 border-r border-gray-800/50 flex flex-col p-3 sm:p-4 gap-3 flex-shrink-0 overflow-y-auto`}>
                       <div>
@@ -1022,11 +1001,10 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                       </div>
                     )}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
 
         {/* Action Buttons */}
         <div className="fixed bottom-4 right-4 flex gap-2 z-40 pointer-events-auto">
@@ -1164,7 +1142,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
           <div
             data-custom-context-menu="true"
             style={{ top: contextMenu.y, left: contextMenu.x }}
-            className="fixed z-[200] bg-[#1e1e24] border border-gray-700/80 shadow-2xl py-1.5 rounded-xl text-xs text-gray-200 min-w-[180px] font-sans backdrop-blur-md select-none"
+            className="fixed z-[200] context-menu-box py-1.5 rounded-xl text-xs min-w-[185px] font-sans backdrop-blur-md select-none"
             onClick={(e) => e.stopPropagation()}
           >
             <div
@@ -1172,7 +1150,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                 handleFileLaunch(contextMenu.file);
                 setContextMenu(null);
               }}
-              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+              className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2.5"
             >
               <ExternalLink size={14} />
               <span>Open</span>
@@ -1182,7 +1160,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                 handleFileClick(contextMenu.file);
                 setContextMenu(null);
               }}
-              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+              className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2.5"
             >
               <Info size={14} />
               <span>Preview & Details</span>
@@ -1192,18 +1170,18 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                 invoke("open_folder", { path: contextMenu.file.path });
                 setContextMenu(null);
               }}
-              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+              className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2.5"
             >
               <FolderOpen size={14} />
               <span>Open in Explorer</span>
             </div>
-            <div className="border-t border-gray-700/60 my-1" />
+            <div className="context-menu-divider my-1" />
             <div
               onClick={() => {
                 navigator.clipboard.writeText(contextMenu.file.path);
                 setContextMenu(null);
               }}
-              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+              className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2.5"
             >
               <Copy size={14} />
               <span>Copy Full Path</span>
@@ -1213,18 +1191,18 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                 navigator.clipboard.writeText(contextMenu.file.name);
                 setContextMenu(null);
               }}
-              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+              className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2.5"
             >
               <Copy size={14} />
               <span>Copy File Name</span>
             </div>
-            <div className="border-t border-gray-700/60 my-1" />
+            <div className="context-menu-divider my-1" />
             <div
               onClick={() => {
                 invoke("show_file_properties", { path: contextMenu.file.path }).catch(console.error);
                 setContextMenu(null);
               }}
-              className="px-3 py-1.5 hover:bg-blue-600 hover:text-white cursor-pointer flex items-center gap-2.5 transition-colors"
+              className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2.5"
             >
               <Wrench size={14} />
               <span>Properties</span>

@@ -954,8 +954,9 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
       {/* Classic Context Menu */}
       {contextMenu && (
         <div
+          data-custom-context-menu="true"
           style={{ top: contextMenu.y, left: contextMenu.x }}
-          className="fixed z-50 bg-[#25252b] border border-[#3b3b44] shadow-xl py-1 rounded text-xs text-gray-200 min-w-[160px] font-ubuntu"
+          className="fixed z-50 context-menu-box py-1 rounded text-xs min-w-[160px] font-ubuntu select-none"
           onClick={(e) => e.stopPropagation()}
         >
           <div
@@ -963,7 +964,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               handleOpenFile(contextMenu.file);
               setContextMenu(null);
             }}
-            className="px-3 py-1 hover:bg-[#0078d7] hover:text-white cursor-pointer flex items-center gap-2"
+            className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2"
           >
             <FolderOpen size={14} />
             <span>Open</span>
@@ -973,7 +974,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               invoke("open_folder", { path: contextMenu.file.path });
               setContextMenu(null);
             }}
-            className="px-3 py-1 hover:bg-[#0078d7] hover:text-white cursor-pointer flex items-center gap-2"
+            className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2"
           >
             <FolderOpen size={14} />
             <span>Open in Explorer</span>
@@ -983,7 +984,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               handleCopyPath(contextMenu.file.path);
               setContextMenu(null);
             }}
-            className="px-3 py-1 hover:bg-[#0078d7] hover:text-white cursor-pointer flex items-center gap-2"
+            className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2"
           >
             <Copy size={14} />
             <span>Copy Full Path</span>
@@ -993,18 +994,18 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               handleCopyName(contextMenu.file.name);
               setContextMenu(null);
             }}
-            className="px-3 py-1 hover:bg-[#0078d7] hover:text-white cursor-pointer flex items-center gap-2"
+            className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2"
           >
             <Copy size={14} />
             <span>Copy Name</span>
           </div>
-          <div className="border-t border-[#3b3b44] my-1" />
+          <div className="context-menu-divider my-1" />
           <div
             onClick={() => {
               handleViewProperties(contextMenu.file);
               setContextMenu(null);
             }}
-            className="px-3 py-1 hover:bg-[#0078d7] hover:text-white cursor-pointer"
+            className="px-3 py-1.5 context-menu-item cursor-pointer flex items-center gap-2"
           >
             Properties
           </div>

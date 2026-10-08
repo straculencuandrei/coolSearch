@@ -761,4 +761,55 @@ input, button, select, textarea, span, p, h1, h2, h3, h4, table, th, td, label {
 .glow-card-idle:hover {
   border-color: rgba(255, 255, 255, 0.28) !important;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 0 16px rgba(255, 255, 255, 0.08) !important;
-}
+}
+
+/* ========================================================
+   CUSTOM CONTEXT MENU (Universal Light & Dark Theming)
+   ======================================================== */
+.context-menu-box {
+  background-color: #212127 !important;
+  color: #e5e7eb !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 12px 35px -4px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+.theme-light .context-menu-box {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 0 1px 1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.context-menu-item {
+  color: #e5e7eb !important;
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.theme-light .context-menu-item {
+  color: #374151 !important;
+}
+
+.context-menu-item:hover {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.context-menu-item:hover * {
+  color: #ffffff !important;
+}
+
+.context-menu-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.theme-light .context-menu-divider {
+  border-top: 1px solid #e5e7eb !important;
+}
+
+/* Ensure hover text stays crisp white on blue/active selections in light theme */
+.theme-light .hover\:text-white:hover,
+.theme-light .group:hover .group-hover\:text-white,
+.theme-light [data-custom-context-menu] .hover\:text-white:hover {
+  color: #ffffff !important;
+}
+
