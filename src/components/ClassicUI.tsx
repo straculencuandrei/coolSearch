@@ -36,8 +36,8 @@ interface ColumnWidths {
 
 const DEFAULT_WIDTHS: ColumnWidths = {
   name: 300,
-  path: 520,
-  type: 110,
+  path: 500,
+  type: 180,
 };
 
 const getFileExtension = (name: string, is_dir: boolean): string => {
@@ -145,7 +145,8 @@ const ClassicRow = React.memo<ClassicRowProps>(({
       {showFileExtensions && (
         <div
           style={{ width: columnWidths.type, fontSize: `${subFontSize}px` }}
-          className={`truncate px-2 text-right font-mono flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+          className={`truncate px-3 text-left font-mono flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+          title={ext}
         >
           {ext}
         </div>
@@ -208,11 +209,17 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
   const [recentFiles, setRecentFiles] = useState<FileRecord[]>([]);
   const [showRecentDrawer, setShowRecentDrawer] = useState<boolean>(false);
 
-  // Column widths with persistence
+  // Column widths with persistence (auto-upgrades cramped type width)
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => {
     try {
       const saved = localStorage.getItem("coolsearch_classic_col_widths");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.type || parsed.type < 160) {
+          parsed.type = DEFAULT_WIDTHS.type;
+        }
+        return { ...DEFAULT_WIDTHS, ...parsed };
+      }
     } catch (e) {}
     return DEFAULT_WIDTHS;
   });
@@ -266,7 +273,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
       }
 
       let minWidth = 80;
-      if (col === 'type') minWidth = 50;
+      if (col === 'type') minWidth = 120;
       if (col === 'path') minWidth = 100;
 
       const newWidth = Math.max(minWidth, sW + delta);
@@ -807,7 +814,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               {settings.showFileExtensions && (
                 <div
                   style={{ width: scaledColumnWidths.type }}
-                  className="relative flex-shrink-0 flex items-center justify-between px-2 cursor-pointer hover:text-white select-none"
+                  className="relative flex-shrink-0 flex items-center justify-between px-3 cursor-pointer hover:text-white select-none"
                   onClick={() => handleHeaderClick('type')}
                 >
                   <span className="truncate">Type</span>
