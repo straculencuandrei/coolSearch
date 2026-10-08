@@ -47,6 +47,7 @@ type FileRowProps = {
   query: string;
   highlightMatches: boolean;
   showFileExtensions: boolean;
+  zoom: number;
 };
 
 type ListRowProps = {
@@ -56,7 +57,7 @@ type ListRowProps = {
 } & FileRowProps;
 
 const FileRow = (props: ListRowProps): React.ReactElement | null => {
-  const { index, style, items, onFileClick, onFileDoubleClick, currentTheme, query, highlightMatches, showFileExtensions } = props;
+  const { index, style, items, onFileClick, onFileDoubleClick, currentTheme, query, highlightMatches, showFileExtensions, zoom } = props;
   const file = items[index];
   if (!file) return null;
 
@@ -74,6 +75,11 @@ const FileRow = (props: ListRowProps): React.ReactElement | null => {
     iconColor = "text-green-500 drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]";
     IconComponent = ImageIcon;
   }
+
+  const iconSize = Math.max(14, Math.round(16 * Math.min(zoom, 1.4)));
+  const nameFontSize = Math.round(11.5 * zoom);
+  const pathFontSize = Math.round(9.5 * zoom);
+  const extFontSize = Math.round(9.5 * zoom);
 
   const renderName = () => {
     if (!highlightMatches || !query.trim()) return file.name;
@@ -99,18 +105,18 @@ const FileRow = (props: ListRowProps): React.ReactElement | null => {
       className="flex items-center px-4 border-b border-gray-800/40 hover:bg-dark-surface/80 transition-colors duration-75 cursor-pointer group"
     >
       <div className={`mr-3 transition-transform group-hover:scale-110 flex-shrink-0 ${iconColor} ${currentTheme.startsWith('neon') ? 'neon-text' : ''}`}>
-        <IconComponent size={16} />
+        <IconComponent size={iconSize} />
       </div>
       <div className="flex-1 truncate flex flex-col justify-center py-1.5 min-w-0">
-        <div className="text-gray-100 font-medium text-[11.5px] truncate leading-none mb-1">
+        <div style={{ fontSize: `${nameFontSize}px` }} className="text-gray-100 font-medium truncate leading-none mb-1">
           {renderName()}
         </div>
-        <div className="text-[9.5px] text-gray-500 truncate leading-none font-mono">
+        <div style={{ fontSize: `${pathFontSize}px` }} className="text-gray-500 truncate leading-none font-mono">
           {file.path}
         </div>
       </div>
       {showFileExtensions && (
-        <span className="ml-2 px-1.5 py-0.5 rounded text-[9.5px] font-mono bg-dark-surface/90 border border-gray-700/50 text-gray-400 flex-shrink-0">
+        <span style={{ fontSize: `${extFontSize}px` }} className="ml-2 px-1.5 py-0.5 rounded font-mono bg-dark-surface/90 border border-gray-700/50 text-gray-400 flex-shrink-0">
           {ext}
         </span>
       )}
@@ -475,7 +481,9 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   const isMobile = windowWidth < 768;
   const isSmall = windowWidth < 1024;
 
-  const rowHeight = settings.rowDensity === 'compact' ? 30 : settings.rowDensity === 'spacious' ? 46 : 38;
+  const zoom = settings.zoomLevel || 1.0;
+  const baseRowHeight = settings.rowDensity === 'compact' ? 30 : settings.rowDensity === 'spacious' ? 46 : 38;
+  const rowHeight = Math.round(baseRowHeight * zoom);
 
   const getResponsiveListHeight = () => {
     const headerSpace = selectedFile ? 180 : 150;
@@ -705,7 +713,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                     transition-all duration-200 overflow-hidden
                   `}>
                     <div className="pl-3 text-gray-400 group-hover:text-white transition-colors flex-shrink-0">
-                      <Search size={18} />
+                      <Search size={Math.max(16, Math.round(18 * Math.min(zoom, 1.4)))} />
                     </div>
                     <input
                       type="text"
@@ -714,7 +722,12 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                       onFocus={() => setIsFocused(true)}
                       onBlur={() => setIsFocused(false)}
                       placeholder="Search files or drives (e.g. 'notes', 'd:', 'd:\games')..."
-                      className="w-full bg-transparent border-none text-sm text-gray-100 placeholder-gray-500 px-3 py-2.5 focus:outline-none focus:ring-0 min-w-0"
+                      style={{
+                        fontSize: `${Math.round(14 * zoom)}px`,
+                        paddingTop: `${Math.round(10 * Math.min(zoom, 1.3))}px`,
+                        paddingBottom: `${Math.round(10 * Math.min(zoom, 1.3))}px`,
+                      }}
+                      className="w-full bg-transparent border-none text-gray-100 placeholder-gray-500 px-3 focus:outline-none focus:ring-0 min-w-0"
                       spellCheck={false}
                       autoFocus
                     />
@@ -967,6 +980,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                             highlightMatches: settings.highlightMatches,
                             showFileExtensions: settings.showFileExtensions,
                             onFileDoubleClick: handleFileLaunch,
+                            zoom,
                           }}
                         />
                       </div>

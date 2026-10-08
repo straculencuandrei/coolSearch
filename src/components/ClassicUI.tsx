@@ -55,6 +55,7 @@ interface ClassicRowProps {
   query: string;
   highlightMatches: boolean;
   showFileExtensions: boolean;
+  zoom: number;
 }
 
 // Memoized Row component outside ClassicUI to prevent remounting rows on resize
@@ -70,12 +71,16 @@ const ClassicRow = React.memo<ClassicRowProps>(({
   query,
   highlightMatches,
   showFileExtensions,
+  zoom,
 }) => {
   const file = items[index];
   if (!file) return null;
   const isSelected = index === selectedIndex;
   const ext = getFileExtension(file.name, file.is_dir);
   const totalWidth = columnWidths.name + columnWidths.path + (showFileExtensions ? columnWidths.type : 0);
+  const iconSize = Math.max(12, Math.round(14 * Math.min(zoom, 1.4)));
+  const nameFontSize = Math.round(12 * zoom);
+  const subFontSize = Math.round(11 * zoom);
 
   const renderName = () => {
     if (!highlightMatches || !query.trim()) return file.name;
@@ -99,11 +104,12 @@ const ClassicRow = React.memo<ClassicRowProps>(({
         ...style,
         width: totalWidth,
         minWidth: '100%',
+        fontSize: `${nameFontSize}px`,
       }}
       onClick={() => onSelect(index)}
       onDoubleClick={() => onOpen(file)}
       onContextMenu={(e) => onContextMenu(e, index, file)}
-      className={`flex items-center px-2 border-b border-[#29292d] text-xs cursor-default select-none ${
+      className={`flex items-center px-2 border-b border-[#29292d] cursor-default select-none ${
         isSelected
           ? 'bg-[#0078d7] text-white'
           : 'text-gray-200 hover:bg-[#25252b]'
@@ -115,17 +121,17 @@ const ClassicRow = React.memo<ClassicRowProps>(({
         className="flex items-center gap-2 truncate pr-3 flex-shrink-0"
       >
         {file.is_dir ? (
-          <Folder size={14} className={isSelected ? 'text-white' : 'text-amber-400 flex-shrink-0'} />
+          <Folder size={iconSize} className={isSelected ? 'text-white' : 'text-amber-400 flex-shrink-0'} />
         ) : (
-          <FileIcon size={14} className={isSelected ? 'text-white' : 'text-gray-400 flex-shrink-0'} />
+          <FileIcon size={iconSize} className={isSelected ? 'text-white' : 'text-gray-400 flex-shrink-0'} />
         )}
         <span className="truncate">{renderName()}</span>
       </div>
 
       {/* Path Column */}
       <div
-        style={{ width: columnWidths.path }}
-        className={`truncate px-2 font-mono text-[11px] flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+        style={{ width: columnWidths.path, fontSize: `${subFontSize}px` }}
+        className={`truncate px-2 font-mono flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
       >
         {file.path}
       </div>
@@ -133,8 +139,8 @@ const ClassicRow = React.memo<ClassicRowProps>(({
       {/* Type Column */}
       {showFileExtensions && (
         <div
-          style={{ width: columnWidths.type }}
-          className={`truncate px-2 text-right font-mono text-[11px] flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+          style={{ width: columnWidths.type, fontSize: `${subFontSize}px` }}
+          className={`truncate px-2 text-right font-mono flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
         >
           {ext}
         </div>
@@ -535,10 +541,21 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
     return () => window.removeEventListener('click', handleClick);
   }, []);
 
-  const totalColumnsWidth = columnWidths.name + columnWidths.path + (settings.showFileExtensions ? columnWidths.type : 0);
+  const zoom = settings.zoomLevel || 1.0;
 
-  // Row height based on settings
-  const rowHeight = settings.rowDensity === 'compact' ? 20 : settings.rowDensity === 'spacious' ? 30 : 24;
+  const scaledColumnWidths = useMemo(() => ({
+    name: Math.round(columnWidths.name * zoom),
+    path: Math.round(columnWidths.path * zoom),
+    type: Math.round(columnWidths.type * zoom),
+  }), [columnWidths, zoom]);
+
+  const totalColumnsWidth = scaledColumnWidths.name + scaledColumnWidths.path + (settings.showFileExtensions ? scaledColumnWidths.type : 0);
+
+  // Row & Header height scaled with zoom
+  const baseRowHeight = settings.rowDensity === 'compact' ? 20 : settings.rowDensity === 'spacious' ? 30 : 24;
+  const rowHeight = Math.round(baseRowHeight * zoom);
+  const headerHeight = Math.max(22, Math.round(24 * Math.min(zoom, 1.35)));
+  const headerFontSize = Math.round(11 * zoom);
 
   return (
     <div className="h-screen w-screen bg-[#18181b] text-[#e0e0e0] flex flex-col select-none overflow-hidden border border-[#2d2d33]">
@@ -803,7 +820,12 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search filename or path (e.g. *.png, notes, c:\windows)..."
               autoFocus
-              className="w-full bg-[#161618] border border-[#3b3b44] rounded px-2.5 py-1 text-xs text-white focus:outline-none focus:border-blue-500 font-ubuntu"
+              style={{
+                fontSize: `${Math.round(12 * zoom)}px`,
+                paddingTop: `${Math.round(4 * Math.min(zoom, 1.4))}px`,
+                paddingBottom: `${Math.round(4 * Math.min(zoom, 1.4))}px`,
+              }}
+              className="w-full bg-[#161618] border border-[#3b3b44] rounded px-2.5 text-white focus:outline-none focus:border-blue-500"
             />
             {query && (
               <button
@@ -817,7 +839,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
         </div>
 
         {/* Quick filter checkboxes */}
-        <div className="flex items-center gap-4 text-xs text-gray-400 font-ubuntu px-0.5">
+        <div style={{ fontSize: `${Math.round(11 * zoom)}px` }} className="flex items-center gap-4 text-gray-400 px-0.5">
           <label className="flex items-center gap-1.5 cursor-pointer hover:text-gray-200">
             <input
               type="checkbox"
@@ -861,12 +883,17 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
           <div style={{ width: totalColumnsWidth, minWidth: '100%' }} className="flex flex-col h-full">
             {/* Draggable Table Header */}
             <div 
-              style={{ width: totalColumnsWidth, minWidth: '100%' }}
-              className="h-6 bg-[#232328] border-b border-[#2d2d33] flex items-center px-2 text-[11px] font-semibold text-gray-300 flex-shrink-0 select-none sticky top-0 z-20 font-ubuntu"
+              style={{
+                width: totalColumnsWidth,
+                minWidth: '100%',
+                height: `${headerHeight}px`,
+                fontSize: `${headerFontSize}px`,
+              }}
+              className="bg-[#232328] border-b border-[#2d2d33] flex items-center px-2 font-semibold text-gray-300 flex-shrink-0 select-none sticky top-0 z-20"
             >
               {/* Name Column Header */}
               <div
-                style={{ width: columnWidths.name }}
+                style={{ width: scaledColumnWidths.name }}
                 className="relative flex-shrink-0 flex items-center justify-between pr-3 cursor-pointer hover:text-white select-none"
                 onClick={() => handleHeaderClick('name')}
               >
@@ -891,7 +918,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
 
               {/* Path Column Header */}
               <div
-                style={{ width: columnWidths.path }}
+                style={{ width: scaledColumnWidths.path }}
                 className="relative flex-shrink-0 flex items-center justify-between px-2 cursor-pointer hover:text-white select-none"
                 onClick={() => handleHeaderClick('path')}
               >
@@ -917,7 +944,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               {/* Type Column Header */}
               {settings.showFileExtensions && (
                 <div
-                  style={{ width: columnWidths.type }}
+                  style={{ width: scaledColumnWidths.type }}
                   className="relative flex-shrink-0 flex items-center justify-between px-2 cursor-pointer hover:text-white select-none"
                   onClick={() => handleHeaderClick('type')}
                 >
@@ -953,13 +980,14 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
                   rowProps={{
                     items: filteredResults,
                     selectedIndex,
-                    columnWidths,
+                    columnWidths: scaledColumnWidths,
                     onSelect: handleSelectFile,
                     onOpen: handleOpenFile,
                     onContextMenu: handleContextMenuOpen,
                     query,
                     highlightMatches: settings.highlightMatches,
                     showFileExtensions: settings.showFileExtensions,
+                    zoom,
                   }}
                 />
               ) : (

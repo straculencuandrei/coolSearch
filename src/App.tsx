@@ -69,10 +69,12 @@ function App() {
     root.style.setProperty('--app-font', resolvedFont);
     body.style.setProperty('--app-font', resolvedFont);
 
-    // Apply Zoom (in VS Code style)
+    // Clear full-document canvas zoom to prevent top-left corner clipping
+    (root.style as any).zoom = '';
+    (body.style as any).zoom = '';
     const zoomVal = settings.zoomLevel || 1.0;
-    (root.style as any).zoom = String(zoomVal);
-    (body.style as any).zoom = String(zoomVal);
+    root.style.setProperty('--content-zoom', String(zoomVal));
+    body.style.setProperty('--content-zoom', String(zoomVal));
   }, [settings.theme, settings.fontFamily, settings.zoomLevel]);
 
   // VS Code-style Zoom Hotkeys: Ctrl+=, Ctrl+-, Ctrl+0, and Ctrl+MouseWheel
