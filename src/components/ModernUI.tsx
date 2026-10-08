@@ -758,7 +758,11 @@ export const ModernUI: React.FC<ModernUIProps> = ({
               <div className="w-full max-w-4xl relative z-10 flex-shrink-0 flex items-center justify-between">
                 <button
                   onClick={() => setSelectedFile(null)}
-                  className={`flex items-center gap-2 text-gray-300 hover:text-white transition-all bg-dark-surface/80 hover:bg-dark-surface px-4 py-2 rounded-xl border border-gray-800 hover:border-white/20 group shadow-md ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+                  className={`flex items-center gap-2 transition-all px-4 py-2 rounded-xl border group shadow-sm ${
+                    currentTheme === 'light'
+                      ? 'bg-white hover:bg-gray-100 text-gray-700 hover:text-gray-950 border-gray-300 hover:border-gray-400'
+                      : 'bg-dark-surface/80 hover:bg-dark-surface text-gray-300 hover:text-white border-gray-800 hover:border-white/20 shadow-md'
+                  } ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
                 >
                   <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform flex-shrink-0" />
                   <span className="text-xs sm:text-sm font-medium">Back to results</span>
