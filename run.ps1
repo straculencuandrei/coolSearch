@@ -2,23 +2,35 @@
 .SYNOPSIS
     Launcher script for coolSearch (NTFS MFT File Search Utility).
 .DESCRIPTION
-    Checks prerequisites (Node.js, Rust/Cargo, MSVC Build Tools, Admin rights),
-    installs missing frontend dependencies, and runs the application.
+    Launches the compiled standalone release executable instantly (0s wait).
+    Supports -Dev mode for Vite + Tauri hot reloading, and -Rebuild for compiling.
 .PARAMETER Mode
-    'tauri' (default) - Full desktop application via Tauri (requires Rust & Administrator)
-    'frontend'        - Vite web dev server only (for UI preview, does not require Rust)
-    'build'           - Build release desktop binary (npm run tauri build)
+    'fast' (default)  - Launches pre-compiled release binary instantly.
+    'dev'             - Vite dev server + Tauri dev mode (hot-reloading for development)
+    'frontend'        - Vite web dev server only (for browser UI preview)
+    'rebuild'         - Recompiles the release binary via build-release.ps1
+.PARAMETER Dev
+    Convenience shortcut for -Mode dev
+.PARAMETER Rebuild
+    Convenience shortcut for -Mode rebuild
 .PARAMETER NoElevation
     Do not prompt to elevate to Administrator.
 .PARAMETER InstallRust
     Automatically install Rustup via winget if Rust is missing.
 #>
 param(
-    [ValidateSet('tauri', 'frontend', 'build')]
-    [string]$Mode = 'tauri',
+    [ValidateSet('fast', 'dev', 'frontend', 'build', 'rebuild', 'tauri')]
+    [string]$Mode = 'fast',
+    [switch]$Dev,
+    [switch]$Rebuild,
     [switch]$NoElevation,
     [switch]$InstallRust
 )
+
+if ($Dev) { $Mode = 'dev' }
+if ($Rebuild) { $Mode = 'rebuild' }
+if ($Mode -eq 'tauri') { $Mode = 'dev' }
+if ($Mode -eq 'build') { $Mode = 'rebuild' }
 
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -44,6 +56,49 @@ function Test-IsAdmin {
 }
 
 Write-Header "coolSearch Launcher"
+
+# 0. Fast Instant Launch (Zero compilation / No dev server)
+if ($Mode -eq 'fast') {
+    $compiledExe = $null
+    if (Test-Path (Join-Path $ScriptDir "coolSearch.exe")) {
+        $compiledExe = Join-Path $ScriptDir "coolSearch.exe"
+    } elseif (Test-Path (Join-Path $ScriptDir "release\coolSearch.exe")) {
+        $compiledExe = Join-Path $ScriptDir "release\coolSearch.exe"
+    } elseif (Test-Path (Join-Path $ScriptDir "src-tauri\target\release\cool-search.exe")) {
+        $compiledExe = Join-Path $ScriptDir "src-tauri\target\release\cool-search.exe"
+    }
+
+    if ($compiledExe) {
+        Write-Info "Found release binary: $compiledExe"
+        Write-Success "Launching coolSearch immediately (0s wait time)..."
+        if (Test-IsAdmin) {
+            cmd.exe /c start "" "$compiledExe"
+        } else {
+            try {
+                Start-Process $compiledExe -Verb RunAs
+            } catch {
+                cmd.exe /c start "" "$compiledExe"
+            }
+        }
+        Write-Success "Application launched."
+        Start-Sleep -Milliseconds 600
+        Exit 0
+    } else {
+        Write-Warn "No pre-compiled release binary found. Will compile once for fast future launches."
+        $Mode = 'rebuild'
+    }
+}
+
+if ($Mode -eq 'rebuild') {
+    Write-Info "Running release builder pipeline..."
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $ScriptDir "build-release.ps1") -SkipBundle
+    if (Test-Path (Join-Path $ScriptDir "release\coolSearch.exe")) {
+        Copy-Item -Path (Join-Path $ScriptDir "release\coolSearch.exe") -Destination (Join-Path $ScriptDir "coolSearch.exe") -Force
+        Write-Success "Compiled coolSearch.exe! Launching now..."
+        Start-Process (Join-Path $ScriptDir "coolSearch.exe") -Verb RunAs
+    }
+    Exit 0
+}
 
 # 1. Check Administrator Rights
 $isAdmin = Test-IsAdmin
