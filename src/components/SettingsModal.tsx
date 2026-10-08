@@ -13,8 +13,12 @@ import {
   Plus,
   MousePointer,
   RotateCcw,
+  Sparkles,
+  Download,
+  Check,
 } from 'lucide-react';
 import { AppSettings, DEFAULT_SETTINGS } from '../types';
+import { AppUpdateInfo } from '../services/updateService';
 import { invoke } from '@tauri-apps/api/core';
 import iconNeco from '../icon-neco.png';
 
@@ -24,6 +28,10 @@ interface SettingsModalProps {
   settings: AppSettings;
   onUpdateSettings: (newSettings: AppSettings) => void;
   availableDrives: string[];
+  currentVersion?: string;
+  updateInfo?: AppUpdateInfo | null;
+  onCheckForUpdate?: () => Promise<AppUpdateInfo | null>;
+  onOpenUpdateDialog?: () => void;
 }
 
 type SettingCategory =
@@ -40,12 +48,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onUpdateSettings,
   availableDrives,
+  currentVersion = '0.4.0',
+  updateInfo,
+  onCheckForUpdate,
+  onOpenUpdateDialog,
 }) => {
   const [activeCategory, setActiveCategory] = useState<SettingCategory>('interface');
   const [searchQuery, setSearchQuery] = useState('');
   const [newExcludePath, setNewExcludePath] = useState('');
   const [reindexStatus, setReindexStatus] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState<boolean>(false);
+  const [checkStatus, setCheckStatus] = useState<'idle' | 'checking' | 'available' | 'up-to-date' | 'error'>('idle');
+  const [detectedUpdate, setDetectedUpdate] = useState<AppUpdateInfo | null>(null);
+
+  const handleManualCheck = async () => {
+    setCheckStatus('checking');
+    try {
+      if (onCheckForUpdate) {
+        const info = await onCheckForUpdate();
+        if (info) {
+          setDetectedUpdate(info);
+          setCheckStatus('available');
+        } else {
+          setDetectedUpdate(null);
+          setCheckStatus('up-to-date');
+        }
+      }
+    } catch (e) {
+      setCheckStatus('error');
+    }
+  };
+
+  const effectiveUpdate = detectedUpdate || updateInfo;
 
   if (!isOpen) return null;
 
@@ -181,14 +215,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <button
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors font-medium ${
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors font-medium relative ${
                         isActive
                           ? 'bg-blue-600/15 text-blue-400 border-l-2 border-blue-500 font-bold'
                           : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border-l-2 border-transparent'
                       }`}
                     >
                       <Icon size={14} className={isActive ? 'text-blue-400' : 'text-gray-500'} />
-                      <span className="truncate">{cat.label}</span>
+                      <span className="truncate flex-1">{cat.label}</span>
+                      {cat.id === 'about' && effectiveUpdate && (
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                      )}
                     </button>
                   );
                 })}
@@ -789,23 +826,103 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             )}
 
-            {/* 6. ABOUT */}
+            {/* 6. ABOUT & UPDATES */}
             {(searchQuery || activeCategory === 'about') && (
-              <div className="bg-[#19191d] border border-[#272730] rounded-xl p-4 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img src={iconNeco} alt="Logo" className="w-5 h-5 pointer-events-none" />
-                    <span className="text-white font-bold text-sm">coolSearch</span>
+              <div className="space-y-3">
+                {/* Application Info */}
+                <div className="bg-[#19191d] border border-[#272730] rounded-xl p-4 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <img src={iconNeco} alt="Logo" className="w-5 h-5 pointer-events-none" />
+                      <span className="text-white font-bold text-sm">coolSearch</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30 text-[11px] font-mono font-bold">
+                      v{currentVersion}
+                    </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30 text-[11px] font-mono font-bold">
-                    v0.4.1
-                  </span>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    High-performance Windows Master File Table (MFT) desktop search engine built in Rust and Tauri. Fully self-contained local desktop application with zero external web dependencies.
+                  </p>
+                  <div className="pt-1 text-[11px] text-gray-500 font-mono">
+                    Engine: Native Rust MFT Parser • Dual UI Modes: Modern & Slim
+                  </div>
                 </div>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  High-performance Windows Master File Table (MFT) desktop search engine built in Rust and Tauri. Fully self-contained local desktop application with zero external web dependencies.
-                </p>
-                <div className="pt-1 text-[11px] text-gray-500 font-mono">
-                  Engine: Native Rust MFT Parser • Dual UI Modes: Modern & Slim
+
+                {/* Instant OTA Updates (wznotes style) */}
+                <div className="bg-[#19191d] border border-[#272730] rounded-xl p-4 space-y-3 hover:border-[#383844] transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={16} className="text-blue-400" />
+                      <h4 className="text-xs font-bold text-white">Application Updates</h4>
+                    </div>
+                    {effectiveUpdate ? (
+                      <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">
+                        v{effectiveUpdate.version} Available
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-mono text-gray-500">
+                        Current: v{currentVersion}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    Instant Over-The-Air update checks via GitHub release manifests with zero-wait background downloads and automatic installer setup.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                    <div className="text-xs">
+                      {checkStatus === 'checking' && (
+                        <span className="text-blue-400 flex items-center gap-1.5 font-medium">
+                          <RefreshCw size={12} className="animate-spin text-blue-400" />
+                          Checking GitHub for latest release...
+                        </span>
+                      )}
+                      {(checkStatus === 'available' || (checkStatus === 'idle' && effectiveUpdate)) && (
+                        <span className="text-blue-400 font-semibold flex items-center gap-1.5">
+                          <Sparkles size={13} />
+                          New update available: v{effectiveUpdate?.version}
+                        </span>
+                      )}
+                      {checkStatus === 'up-to-date' && !effectiveUpdate && (
+                        <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                          <Check size={13} />
+                          You are using the latest version of coolSearch.
+                        </span>
+                      )}
+                      {checkStatus === 'error' && (
+                        <span className="text-red-400 text-[11px]">
+                          Could not check updates. Check your internet connection.
+                        </span>
+                      )}
+                      {checkStatus === 'idle' && !effectiveUpdate && (
+                        <span className="text-gray-500 text-[11px]">
+                          Automatic checks run on startup.
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {effectiveUpdate && (
+                        <button
+                          onClick={onOpenUpdateDialog}
+                          className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <Download size={13} />
+                          <span>View & Install Update</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={handleManualCheck}
+                        disabled={checkStatus === 'checking'}
+                        className="px-3 py-1.5 bg-[#25252e] hover:bg-[#30303c] text-white border border-[#363644] rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <RefreshCw size={12} className={checkStatus === 'checking' ? 'animate-spin' : ''} />
+                        <span>Check for Updates</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

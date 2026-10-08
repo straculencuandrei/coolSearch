@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
 import { UIMode, AppSettings, loadSettings, saveSettings } from "./types";
 import { ModernUI } from "./components/ModernUI";
 import { ClassicUI } from "./components/ClassicUI";
 import { SettingsModal } from "./components/SettingsModal";
+import { UpdateDialog } from "./components/UpdateDialog";
+import { AppUpdateInfo, checkForUpdate } from "./services/updateService";
 import "./App.css";
 
 const fontMap: Record<string, string> = {
@@ -19,11 +22,47 @@ function App() {
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
   const [availableDrives, setAvailableDrives] = useState<string[]>([]);
+  const [appVersion, setAppVersion] = useState<string>("0.4.0");
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [showUpdateDialog, setShowUpdateDialog] = useState<boolean>(false);
 
   // Reveal window once mounted to eliminate any white flash
   useEffect(() => {
     appWindow.show().catch(() => {});
   }, []);
+
+  // Fetch version & run instant OTA update check (wznotes pattern)
+  useEffect(() => {
+    const initVersionAndCheckUpdate = async () => {
+      let currentVer = "0.4.0";
+      try {
+        currentVer = await getVersion();
+        setAppVersion(currentVer);
+      } catch (err) {
+        // Fallback to default
+      }
+
+      try {
+        const info = await checkForUpdate(currentVer);
+        if (info) {
+          setUpdateInfo(info);
+          if (info.is_mandatory) {
+            setShowUpdateDialog(true);
+          }
+        }
+      } catch (err) {
+        console.warn("[App] Automatic update check error:", err);
+      }
+    };
+
+    initVersionAndCheckUpdate();
+  }, []);
+
+  const handleManualCheckForUpdate = useCallback(async (): Promise<AppUpdateInfo | null> => {
+    const info = await checkForUpdate(appVersion);
+    setUpdateInfo(info);
+    return info;
+  }, [appVersion]);
 
   // Fetch available drives
   useEffect(() => {
@@ -171,6 +210,8 @@ function App() {
           onSwitchUI={handleSwitchUI}
           onOpenSettingsModal={handleOpenSettingsModal}
           availableDrives={availableDrives}
+          updateInfo={updateInfo}
+          onOpenUpdateDialog={() => setShowUpdateDialog(true)}
         />
       ) : (
         <ModernUI
@@ -178,6 +219,8 @@ function App() {
           onSwitchUI={handleSwitchUI}
           onOpenSettingsModal={handleOpenSettingsModal}
           availableDrives={availableDrives}
+          updateInfo={updateInfo}
+          onOpenUpdateDialog={() => setShowUpdateDialog(true)}
         />
       )}
 
@@ -188,6 +231,19 @@ function App() {
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
         availableDrives={availableDrives}
+        currentVersion={appVersion}
+        updateInfo={updateInfo}
+        onCheckForUpdate={handleManualCheckForUpdate}
+        onOpenUpdateDialog={() => setShowUpdateDialog(true)}
+      />
+
+      {/* Instant OTA Update Dialog (wznotes style) */}
+      <UpdateDialog
+        update={updateInfo}
+        currentVersion={appVersion}
+        currentTheme={settings.theme}
+        isOpen={showUpdateDialog}
+        onClose={() => setShowUpdateDialog(false)}
       />
     </div>
   );

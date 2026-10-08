@@ -12,9 +12,11 @@ import {
   FolderOpen,
   Check,
   Clock,
-  Laptop
+  Laptop,
+  Sparkles
 } from "lucide-react";
 import { FileRecord, UIMode, AppSettings } from "../types";
+import { AppUpdateInfo } from "../services/updateService";
 import iconNeco from "../icon-neco.png";
 
 interface ClassicUIProps {
@@ -22,6 +24,8 @@ interface ClassicUIProps {
   onSwitchUI: (target: UIMode) => void;
   onOpenSettingsModal: () => void;
   availableDrives: string[];
+  updateInfo?: AppUpdateInfo | null;
+  onOpenUpdateDialog?: () => void;
 }
 
 interface ColumnWidths {
@@ -157,6 +161,8 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
   onSwitchUI,
   onOpenSettingsModal,
   availableDrives,
+  updateInfo,
+  onOpenUpdateDialog,
 }) => {
   const appWindow = getCurrentWindow();
   const [query, setQuery] = useState("");
@@ -642,6 +648,18 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
           <Settings size={13} />
           <span>Settings</span>
         </button>
+
+        {/* Instant Update Available Indicator */}
+        {updateInfo && (
+          <button
+            onClick={onOpenUpdateDialog}
+            className="px-2 py-0.5 rounded bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 transition-colors flex items-center gap-1.5 animate-pulse ml-auto cursor-pointer"
+            title={`coolSearch v${updateInfo.version} is available. Click to download and install.`}
+          >
+            <Sparkles size={13} className="text-blue-300" />
+            <span className="font-bold">Update v{updateInfo.version}</span>
+          </button>
+        )}
       </div>
 
       {/* Search Input & Quick Filters Bar */}

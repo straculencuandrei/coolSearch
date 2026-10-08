@@ -416,6 +416,40 @@ $step5Action = {
 
     $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $releaseDir "release-manifest.json") -Encoding UTF8
 
+    # 8. Generate & Synchronize version_manifest.json for OTA In-App Updates (wznotes pattern)
+    $versionManifestPath = Join-Path $workDir "version_manifest.json"
+    $existingNotes = "• Fast NTFS Indexing: Instant drive indexing with parent directory memoization.`n• Exact Match Search Filter: Instant toggle to match exact filenames ignoring extensions.`n• Dynamic Extension Selector: Real-time extension breakdown dropdown with item counts.`n• Adaptive Keystroke Debouncing: Smooth keystroke processing for million-file search indices.`n• React Rendering Optimization: 60FPS UI transitions with memoized file results.`n• Instant In-App Updates: Instant OTA update detection, progress tracking, and one-click installation."
+    $buildNum = 1
+    if (Test-Path $versionManifestPath) {
+        try {
+            $oldManifest = Get-Content $versionManifestPath -Raw | ConvertFrom-Json
+            if ($oldManifest.release_notes) { $existingNotes = $oldManifest.release_notes }
+            if ($oldManifest.build_number) { $buildNum = [int]$oldManifest.build_number + 1 }
+        } catch {}
+    }
+
+    $nsisInstaller = Get-ChildItem -Path $releaseDir -File -Filter "*setup.exe" | Select-Object -First 1
+    $msiInstaller = Get-ChildItem -Path $releaseDir -File -Filter "*.msi" | Select-Object -First 1
+    $installerName = if ($nsisInstaller) { $nsisInstaller.Name } else { "coolSearch_${appVersion}_x64-setup.exe" }
+    $msiName = if ($msiInstaller) { $msiInstaller.Name } else { "coolSearch_${appVersion}_x64_en-US.msi" }
+
+    $versionManifest = [ordered]@{
+        version        = $appVersion
+        build_number   = $buildNum
+        title          = "coolSearch v$appVersion Update"
+        release_notes  = $existingNotes
+        windows_url    = "https://github.com/straculencuandrei/coolSearch/releases/download/v$appVersion/$installerName"
+        portable_url   = "https://github.com/straculencuandrei/coolSearch/releases/download/v$appVersion/coolSearch.exe"
+        msi_url        = "https://github.com/straculencuandrei/coolSearch/releases/download/v$appVersion/$msiName"
+        zip_url        = "https://github.com/straculencuandrei/coolSearch/releases/download/v$appVersion/coolSearch-v$appVersion-windows-x64.zip"
+        published_at   = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
+        is_mandatory   = $false
+    }
+
+    $versionManifestJson = $versionManifest | ConvertTo-Json -Depth 4
+    $versionManifestJson | Set-Content -Path $versionManifestPath -Encoding UTF8
+    $versionManifestJson | Set-Content -Path (Join-Path $releaseDir "version_manifest.json") -Encoding UTF8
+
     return "Assembly complete."
 }
 

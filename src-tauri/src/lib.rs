@@ -202,6 +202,115 @@ fn get_available_drives() -> Vec<String> {
     set.into_iter().collect()
 }
 
+#[derive(serde::Serialize, Clone)]
+pub struct DownloadProgress {
+    pub percent: u32,
+    pub downloaded_bytes: u64,
+    pub total_bytes: u64,
+}
+
+#[tauri::command]
+async fn download_and_install_update(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    use tauri::Emitter;
+
+    if !url.starts_with("https://") {
+        return Err("Invalid download URL: must be HTTPS".to_string());
+    }
+
+    let temp_dir = std::env::temp_dir();
+    let file_name = if url.ends_with(".msi") {
+        "coolSearch_update.msi"
+    } else {
+        "coolSearch_update_setup.exe"
+    };
+    let target_path = temp_dir.join(file_name);
+
+    if target_path.exists() {
+        let _ = std::fs::remove_file(&target_path);
+    }
+
+    // Determine Content-Length via curl head request
+    let mut total_bytes: u64 = 0;
+    #[cfg(windows)]
+    use std::os::windows::process::CommandExt;
+
+    let mut head_cmd = std::process::Command::new("curl.exe");
+    head_cmd.args(&["-sIL", &url]);
+    #[cfg(windows)]
+    head_cmd.creation_flags(0x08000000);
+
+    if let Ok(head_output) = head_cmd.output() {
+        let head_str = String::from_utf8_lossy(&head_output.stdout);
+        for line in head_str.lines() {
+            let line_lower = line.to_lowercase();
+            if line_lower.starts_with("content-length:") {
+                if let Some(val_str) = line.split(':').nth(1) {
+                    if let Ok(val) = val_str.trim().parse::<u64>() {
+                        total_bytes = val;
+                    }
+                }
+            }
+        }
+    }
+
+    let target_str = target_path.to_string_lossy().to_string();
+    let mut download_cmd = std::process::Command::new("curl.exe");
+    download_cmd.args(&["-L", "-f", "-s", "-o", &target_str, &url]);
+    #[cfg(windows)]
+    download_cmd.creation_flags(0x08000000);
+
+    let mut child = download_cmd
+        .spawn()
+        .map_err(|e| format!("Failed to spawn curl: {}", e))?;
+
+    while let Ok(None) = child.try_wait() {
+        if let Ok(meta) = std::fs::metadata(&target_path) {
+            let downloaded = meta.len();
+            let percent = if total_bytes > 0 {
+                ((downloaded as f64 / total_bytes as f64) * 100.0).min(99.0) as u32
+            } else {
+                0
+            };
+            let _ = app.emit(
+                "update-download-progress",
+                DownloadProgress {
+                    percent,
+                    downloaded_bytes: downloaded,
+                    total_bytes,
+                },
+            );
+        }
+        std::thread::sleep(std::time::Duration::from_millis(150));
+    }
+
+    let exit_status = child.wait().map_err(|e| e.to_string())?;
+    if !exit_status.success() {
+        return Err("Download failed. Please check internet connection.".to_string());
+    }
+
+    let final_size = std::fs::metadata(&target_path).map(|m| m.len()).unwrap_or(total_bytes);
+    let _ = app.emit(
+        "update-download-progress",
+        DownloadProgress {
+            percent: 100,
+            downloaded_bytes: final_size,
+            total_bytes: final_size,
+        },
+    );
+
+    // Launch downloaded installer
+    open_file(target_str)?;
+
+    // Gracefully exit application after 800ms
+    let app_clone = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(800));
+        app_clone.exit(0);
+    });
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -230,7 +339,8 @@ pub fn run() {
             open_url,
             refresh_index,
             save_recent_files,
-            load_recent_files
+            load_recent_files,
+            download_and_install_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

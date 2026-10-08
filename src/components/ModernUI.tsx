@@ -18,13 +18,12 @@ import {
   Type,
   Wrench,
   Sparkles,
-  Download,
   X,
   Clock,
   HardDrive,
   Zap
 } from "lucide-react";
-import { check } from "@tauri-apps/plugin-updater";
+import { AppUpdateInfo } from "../services/updateService";
 import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { FileRecord, UIMode, AppSettings } from "../types";
@@ -132,6 +131,8 @@ interface ModernUIProps {
   onSwitchUI: (target: UIMode) => void;
   onOpenSettingsModal: () => void;
   availableDrives: string[];
+  updateInfo?: AppUpdateInfo | null;
+  onOpenUpdateDialog?: () => void;
 }
 
 export const ModernUI: React.FC<ModernUIProps> = ({
@@ -139,6 +140,8 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   onSwitchUI,
   onOpenSettingsModal,
   availableDrives: propDrives,
+  updateInfo,
+  onOpenUpdateDialog,
 }) => {
   const appWindow = getCurrentWindow();
   const [query, setQuery] = useState("");
@@ -152,7 +155,6 @@ export const ModernUI: React.FC<ModernUIProps> = ({
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const currentFont = settings.fontFamily || 'ubuntu';
   const currentTheme = settings.theme || 'matte-dark';
-  const [updateAvailable, setUpdateAvailable] = useState<any>(null);
   const [releaseNotes, setReleaseNotes] = useState<string>("");
   const [showNotes, setShowNotes] = useState(false);
   const [appVersion, setAppVersion] = useState(CURRENT_VERSION);
@@ -200,15 +202,7 @@ export const ModernUI: React.FC<ModernUIProps> = ({
     e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
   };
 
-  useEffect(() => {
-    const checkForUpdates = async () => {
-      try {
-        const update = await check();
-        if (update) setUpdateAvailable(update);
-      } catch (e) {}
-    };
-    checkForUpdates();
-  }, []);
+
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -1028,9 +1022,9 @@ export const ModernUI: React.FC<ModernUIProps> = ({
           </button>
         </div>
 
-        {/* Update Button */}
+        {/* Instant Update Button */}
         <AnimatePresence>
-          {updateAvailable && updateAvailable.version !== appVersion && (
+          {updateInfo && (
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -1038,13 +1032,11 @@ export const ModernUI: React.FC<ModernUIProps> = ({
               className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30"
             >
               <button
-                onClick={async () => {
-                  await updateAvailable.downloadAndInstall();
-                }}
-                className={`flex items-center gap-2 bg-gray-200 text-dark-bg font-bold px-4 sm:px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all text-xs sm:text-sm uppercase tracking-wider ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
+                onClick={onOpenUpdateDialog}
+                className={`flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 sm:px-6 py-2.5 rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all text-xs sm:text-sm uppercase tracking-wider cursor-pointer ${currentTheme.startsWith('neon') ? 'neon-border' : ''}`}
               >
-                <Download size={18} />
-                <span className="hidden sm:inline">Update to {updateAvailable.version}</span>
+                <Sparkles size={18} />
+                <span className="hidden sm:inline">Update to v{updateInfo.version}</span>
                 <span className="sm:hidden">Update</span>
               </button>
             </motion.div>
@@ -1124,7 +1116,21 @@ export const ModernUI: React.FC<ModernUIProps> = ({
                   </div>
                   <div>
                     <span className="text-gray-500 block mb-0.5 text-[11px] uppercase tracking-widest">Version</span>
-                    <span className="text-gray-200 font-medium text-base">{appVersion}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-200 font-medium text-base">v{appVersion}</span>
+                      {updateInfo && (
+                        <button
+                          onClick={() => {
+                            setShowInfo(false);
+                            onOpenUpdateDialog?.();
+                          }}
+                          className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold hover:bg-blue-500/30 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Sparkles size={11} />
+                          <span>v{updateInfo.version} Available</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => {
