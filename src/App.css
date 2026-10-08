@@ -303,6 +303,36 @@ input, button, select, textarea, span, p, h1, h2, h3, h4, table, th, td, label {
 }
 
 /* Hover States */
+.theme-light .classic-row-unselected:hover {
+  background-color: #eaf0f6 !important;
+}
+
+/* Classic UI selected row for Light Theme - Crisp, modern, high-contrast combination */
+.theme-light .classic-row-selected-light {
+  background-color: #d8ecfc !important;
+  border-bottom-color: #bcdcf5 !important;
+}
+
+.theme-light .classic-row-selected-light .classic-item-name {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+.theme-light .classic-row-selected-light .classic-item-path {
+  color: #334155 !important;
+}
+
+.theme-light .classic-row-selected-light .classic-item-type {
+  color: #1d4ed8 !important;
+  font-weight: 600 !important;
+}
+
+.theme-light .classic-row-selected-light .classic-match-highlight {
+  color: #172554 !important;
+  background-color: #bfdbfe !important;
+  font-weight: 800 !important;
+}
+
 .theme-light .hover\:bg-\[\#25252b\]:hover,
 .theme-light .hover\:bg-\[\#25252f\]:hover,
 .theme-light .hover\:bg-\[\#282832\]:hover,

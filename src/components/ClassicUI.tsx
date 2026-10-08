@@ -35,9 +35,9 @@ interface ColumnWidths {
 }
 
 const DEFAULT_WIDTHS: ColumnWidths = {
-  name: 300,
-  path: 500,
-  type: 180,
+  name: 260,
+  path: 450,
+  type: 140,
 };
 
 const getFileExtension = (name: string, is_dir: boolean): string => {
@@ -60,6 +60,7 @@ interface ClassicRowProps {
   highlightMatches: boolean;
   showFileExtensions: boolean;
   zoom: number;
+  currentTheme?: string;
 }
 
 // Memoized Row component outside ClassicUI to prevent remounting rows on resize
@@ -76,10 +77,12 @@ const ClassicRow = React.memo<ClassicRowProps>(({
   highlightMatches,
   showFileExtensions,
   zoom,
+  currentTheme,
 }) => {
   const file = items[index];
   if (!file) return null;
   const isSelected = index === selectedIndex;
+  const isLight = currentTheme === 'light';
   const ext = getFileExtension(file.name, file.is_dir);
   const totalWidth = columnWidths.name + columnWidths.path + (showFileExtensions ? columnWidths.type : 0);
   const iconSize = Math.max(12, Math.round(14 * Math.min(zoom, 1.4)));
@@ -94,7 +97,17 @@ const ClassicRow = React.memo<ClassicRowProps>(({
     return (
       <>
         {file.name.slice(0, idx)}
-        <span className="text-blue-400 font-bold bg-blue-500/25 px-0.5 rounded">
+        <span
+          className={
+            isSelected
+              ? (isLight
+                  ? 'classic-match-highlight text-blue-950 font-extrabold bg-blue-200/90 px-0.5 rounded shadow-xs'
+                  : 'text-blue-100 font-extrabold bg-blue-800/80 px-0.5 rounded')
+              : (isLight
+                  ? 'text-blue-700 font-bold bg-blue-100 px-0.5 rounded'
+                  : 'text-blue-400 font-bold bg-blue-500/25 px-0.5 rounded')
+          }
+        >
           {file.name.slice(idx, idx + q.length)}
         </span>
         {file.name.slice(idx + q.length)}
@@ -114,29 +127,53 @@ const ClassicRow = React.memo<ClassicRowProps>(({
       onClick={() => onSelect(index)}
       onDoubleClick={() => onOpen(file)}
       onContextMenu={(e) => onContextMenu(e, index, file)}
-      className={`flex items-center px-2 border-b border-[#29292d] cursor-default select-none ${
+      className={`flex items-center px-0 border-b cursor-default select-none transition-colors duration-75 ${
         isSelected
-          ? 'bg-[#0078d7] text-white'
-          : 'text-gray-200 hover:bg-[#25252b]'
+          ? (isLight
+              ? 'classic-row-selected-light bg-[#d8ecfc] text-[#0f172a] border-[#bcdcf5]'
+              : 'classic-row-selected-dark bg-[#0078d7] text-white border-[#006cc1]')
+          : (isLight
+              ? 'classic-row-unselected text-gray-800 hover:bg-[#eef2f6] border-[#e2e8f0]'
+              : 'text-gray-200 hover:bg-[#25252b] border-[#29292d]')
       }`}
     >
       {/* Name Column */}
       <div
         style={{ width: columnWidths.name }}
-        className="flex items-center gap-2 truncate pr-3 flex-shrink-0"
+        className="flex items-center gap-2 truncate pl-3 pr-2 flex-shrink-0"
       >
         {file.is_dir ? (
-          <Folder size={iconSize} className={isSelected ? 'text-white' : 'text-amber-400 flex-shrink-0'} />
+          <Folder
+            size={iconSize}
+            className={
+              isSelected
+                ? (isLight ? 'text-amber-600 flex-shrink-0' : 'text-amber-200 flex-shrink-0')
+                : (isLight ? 'text-amber-500 flex-shrink-0' : 'text-amber-400 flex-shrink-0')
+            }
+          />
         ) : (
-          <FileIcon size={iconSize} className={isSelected ? 'text-white' : 'text-gray-400 flex-shrink-0'} />
+          <FileIcon
+            size={iconSize}
+            className={
+              isSelected
+                ? (isLight ? 'text-slate-600 flex-shrink-0' : 'text-blue-100 flex-shrink-0')
+                : (isLight ? 'text-slate-400 flex-shrink-0' : 'text-gray-400 flex-shrink-0')
+            }
+          />
         )}
-        <span className="truncate">{renderName()}</span>
+        <span className={`truncate classic-item-name ${isSelected && isLight ? 'text-[#0f172a] font-semibold' : ''}`}>
+          {renderName()}
+        </span>
       </div>
 
       {/* Path Column */}
       <div
         style={{ width: columnWidths.path, fontSize: `${subFontSize}px` }}
-        className={`truncate px-2 font-mono flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+        className={`truncate px-2 font-mono flex-shrink-0 classic-item-path ${
+          isSelected
+            ? (isLight ? 'text-[#334155]' : 'text-blue-100')
+            : (isLight ? 'text-gray-500' : 'text-gray-400')
+        }`}
       >
         {file.path}
       </div>
@@ -145,7 +182,11 @@ const ClassicRow = React.memo<ClassicRowProps>(({
       {showFileExtensions && (
         <div
           style={{ width: columnWidths.type, fontSize: `${subFontSize}px` }}
-          className={`truncate px-3 text-left font-mono flex-shrink-0 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+          className={`truncate px-2 text-left font-mono flex-shrink-0 classic-item-type ${
+            isSelected
+              ? (isLight ? 'text-[#1d4ed8] font-semibold' : 'text-blue-100 font-medium')
+              : (isLight ? 'text-gray-500' : 'text-gray-400')
+          }`}
           title={ext}
         >
           {ext}
@@ -236,13 +277,17 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
   const [recentFiles, setRecentFiles] = useState<FileRecord[]>([]);
   const [showRecentDrawer, setShowRecentDrawer] = useState<boolean>(false);
 
-  // Column widths with persistence (auto-upgrades cramped type width)
+  // Column widths with persistence
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => {
     try {
       const saved = localStorage.getItem("coolsearch_classic_col_widths");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (!parsed.type || parsed.type < 160) {
+        // If saved widths match the old bulky 980px defaults, upgrade to clean defaults
+        if (parsed.name === 300 && parsed.path === 500 && parsed.type === 180) {
+          return DEFAULT_WIDTHS;
+        }
+        if (!parsed.type || parsed.type < 100) {
           parsed.type = DEFAULT_WIDTHS.type;
         }
         return { ...DEFAULT_WIDTHS, ...parsed };
@@ -592,40 +637,58 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
 
   const zoom = settings.zoomLevel || 1.0;
 
-  // Dynamically scale Path and Type with window width so they never stay cramped on fullscreen
+  // Dynamically scale columns with window width so they live-resize without overflow or scrollbars
   const scaledColumnWidths = useMemo(() => {
+    const hasType = !!settings.showFileExtensions;
     const baseName = Math.round(columnWidths.name * zoom);
     const basePath = Math.round(columnWidths.path * zoom);
-    const baseType = Math.round(columnWidths.type * zoom);
-    const hasType = !!settings.showFileExtensions;
+    const baseType = hasType ? Math.round(columnWidths.type * zoom) : 0;
+    const baseSum = baseName + basePath + baseType;
 
-    const baseSum = baseName + basePath + (hasType ? baseType : 0);
-    // 16px accounts for px-2 table padding
-    const usableWidth = Math.max(baseSum, containerWidth - 16);
-    const extra = usableWidth - baseSum;
+    const minName = Math.round(180 * zoom);
+    const minPath = Math.round(200 * zoom);
+    const minType = hasType ? Math.round(100 * zoom) : 0;
+    const minTotal = minName + minPath + minType;
 
-    if (extra <= 0) {
-      return {
-        name: baseName,
-        path: basePath,
-        type: baseType,
-      };
-    }
+    const targetWidth = Math.max(minTotal, containerWidth);
 
-    if (hasType) {
-      // Allocate 70% extra space to Path (deep folders), 30% to Type (longer extensions)
-      const pathExtra = Math.round(extra * 0.70);
-      const typeExtra = extra - pathExtra;
-      return {
-        name: baseName,
-        path: basePath + pathExtra,
-        type: baseType + typeExtra,
-      };
+    if (targetWidth >= baseSum) {
+      // Window is equal to or wider than base widths: distribute extra space
+      const extra = targetWidth - baseSum;
+      if (extra === 0) {
+        return { name: baseName, path: basePath, type: baseType };
+      }
+      if (hasType) {
+        // Allocate 70% extra to Path (for deep folders), 20% to Type (longer extensions), 10% to Name
+        const pathExtra = Math.round(extra * 0.70);
+        const typeExtra = Math.round(extra * 0.20);
+        const nameExtra = extra - pathExtra - typeExtra;
+        return {
+          name: baseName + nameExtra,
+          path: basePath + pathExtra,
+          type: baseType + typeExtra,
+        };
+      } else {
+        const pathExtra = Math.round(extra * 0.85);
+        const nameExtra = extra - pathExtra;
+        return {
+          name: baseName + nameExtra,
+          path: basePath + pathExtra,
+          type: baseType,
+        };
+      }
     } else {
+      // Window is narrower than base widths (e.g. startup / restored window):
+      // Proportionally scale down so columns fit EXACTLY within targetWidth with 0 overflow!
+      const ratio = (targetWidth - minTotal) / Math.max(1, baseSum - minTotal);
+      const scaledName = minName + Math.round((baseName - minName) * ratio);
+      const scaledType = hasType ? minType + Math.round((baseType - minType) * ratio) : 0;
+      const scaledPath = targetWidth - scaledName - scaledType;
+
       return {
-        name: baseName,
-        path: basePath + extra,
-        type: baseType,
+        name: scaledName,
+        path: scaledPath,
+        type: scaledType,
       };
     }
   }, [columnWidths, zoom, containerWidth, settings.showFileExtensions]);
@@ -819,12 +882,12 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
                 width: totalColumnsWidth,
                 minWidth: '100%',
               }}
-              className="h-6 bg-[#232328] border-b border-[#2d2d33] flex items-center px-2 text-[11px] font-semibold text-gray-300 flex-shrink-0 select-none sticky top-0 z-20"
+              className="h-6 bg-[#232328] border-b border-[#2d2d33] flex items-center px-0 text-[11px] font-semibold text-gray-300 flex-shrink-0 select-none sticky top-0 z-20"
             >
               {/* Name Column Header */}
               <div
                 style={{ width: scaledColumnWidths.name }}
-                className="relative flex-shrink-0 flex items-center justify-between pr-3 cursor-pointer hover:text-white select-none"
+                className="relative flex-shrink-0 flex items-center justify-between pl-3 pr-2 cursor-pointer hover:text-white select-none"
                 onClick={() => handleHeaderClick('name')}
               >
                 <span className="truncate">Name</span>
@@ -875,7 +938,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
               {settings.showFileExtensions && (
                 <div
                   style={{ width: scaledColumnWidths.type }}
-                  className="relative flex-shrink-0 flex items-center justify-between px-3 cursor-pointer hover:text-white select-none"
+                  className="relative flex-shrink-0 flex items-center justify-between px-2 cursor-pointer hover:text-white select-none"
                   onClick={() => handleHeaderClick('type')}
                 >
                   <span className="truncate">Type</span>
@@ -901,7 +964,7 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
 
             {/* Virtualized Table Body */}
             <div ref={tableBodyRef} className="flex-1 min-h-0 relative overflow-hidden">
-              {filteredResults.length > 0 ? (
+              {filteredResults.length > 0 && (
                 <List
                   className="custom-scrollbar w-full"
                   style={{ height: tableHeight, width: totalColumnsWidth }}
@@ -919,15 +982,21 @@ export const ClassicUI: React.FC<ClassicUIProps> = ({
                     highlightMatches: settings.highlightMatches,
                     showFileExtensions: settings.showFileExtensions,
                     zoom,
+                    currentTheme: settings.theme,
                   }}
                 />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500 text-xs font-ubuntu">
-                  {query ? `No objects found matching "${query}"` : "Type a query above to start searching (e.g. 'notes', 'd:', 'exe')"}
-                </div>
               )}
             </div>
           </div>
+
+          {/* Centered Empty State Overlay: Stays 100% dead-centered in visible viewport */}
+          {filteredResults.length === 0 && (
+            <div className="absolute inset-x-0 top-6 bottom-0 flex flex-col items-center justify-center pointer-events-none select-none px-6 text-center z-10">
+              <p className="text-gray-400 dark:text-gray-500 text-xs font-ubuntu">
+                {query ? `No objects found matching "${query}"` : "Type a query above to start searching (e.g. 'notes', 'd:', 'exe')"}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Recent Files Side Drawer */}
