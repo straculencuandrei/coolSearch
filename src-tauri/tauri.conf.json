@@ -19,7 +19,9 @@
         "minWidth": 600,
         "minHeight": 500,
         "center": true,
-        "decorations": false
+        "decorations": false,
+        "visible": false,
+        "backgroundColor": [26, 26, 26, 255]
       }
     ],
     "security": {
